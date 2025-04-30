@@ -153,5 +153,27 @@ def delete_salary(id):
     flash('Salary deleted successfully!')
     return redirect(url_for('index'))
 
+@app.route('/salary_visualization')
+@login_required
+def salary_visualization():
+    salaries = Salary.get_by_user(current_user.id)
+    
+    # Group salaries by month
+    monthly_salaries = {}
+    for salary in salaries:
+        month = salary.date.strftime('%Y-%m')
+        if month not in monthly_salaries:
+            monthly_salaries[month] = 0
+        monthly_salaries[month] += salary.amount
+    
+    # Sort by month and prepare data for the chart
+    sorted_months = sorted(monthly_salaries.keys())
+    salary_data = {
+        'months': [datetime.strptime(month, '%Y-%m').strftime('%b %Y') for month in sorted_months],
+        'amounts': [monthly_salaries[month] for month in sorted_months]
+    }
+    
+    return render_template('salary_visualization.html', salary_data=salary_data)
+
 if __name__ == '__main__':
     app.run(debug=True) 

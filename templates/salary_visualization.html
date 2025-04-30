@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container">
+  <h2 class="mb-4">Monthly Salary Overview</h2>
+  <div class="card">
+    <div class="card-body">
+      <canvas id="salaryChart"></canvas>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    const ctx = document.getElementById('salaryChart').getContext('2d');
+    const salaryData = {{ salary_data| tojson
+  }};
+
+  new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: salaryData.months,
+      datasets: [{
+        label: 'Monthly Salary',
+        data: salaryData.amounts,
+        backgroundColor: 'rgba(54, 162, 235, 0.5)',
+        borderColor: 'rgba(54, 162, 235, 1)',
+        borderWidth: 1
+      }]
+    },
+    options: {
+      responsive: true,
+      scales: {
+        y: {
+          beginAtZero: true,
+          title: {
+            display: true,
+            text: 'Amount (₹)'
+          }
+        },
+        x: {
+          title: {
+            display: true,
+            text: 'Month'
+          }
+        }
+      }
+    }
+  });
+    });
+</script>
+{% endblock %}
