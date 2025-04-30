@@ -4,16 +4,32 @@
 <div class="container">
   <h2 class="mb-4">Monthly Salary Overview</h2>
 
-  <!-- Current Month Salary Card -->
+  <!-- Current Month Information -->
   <div class="card mb-4">
     <div class="card-body">
-      <h5 class="card-title">Current Month Salary</h5>
+      <h5 class="card-title">Current Month Details</h5>
       <div class="row">
-        <div class="col-md-12">
+        <div class="col-md-4">
           <div class="card bg-light">
             <div class="card-body">
               <h6 class="card-subtitle mb-2 text-muted">Month Salary - {{ current_month_name }}</h6>
               <h3 class="card-text">₹{{ current_salary|default(0)|int|format_currency }}</h3>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="card bg-success text-white">
+            <div class="card-body">
+              <h6 class="card-subtitle mb-2">Current Month Credits</h6>
+              <h3 class="card-text">₹{{ total_credits|default(0)|int|format_currency }}</h3>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="card bg-danger text-white">
+            <div class="card-body">
+              <h6 class="card-subtitle mb-2">Current Month Debits</h6>
+              <h3 class="card-text">₹{{ total_debits|default(0)|int|format_currency }}</h3>
             </div>
           </div>
         </div>
