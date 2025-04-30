@@ -195,33 +195,34 @@ def salary_visualization():
     # Get current month
     current_date = datetime.now()
     current_month = current_date.strftime('%Y-%m')
-    current_month_name = current_date.strftime('%B %Y')  # Format: "April 2024"
+    current_month_name = current_date.strftime('%B %Y')
     
     # Get current month's salary
     current_month_salary = monthly_salaries.get(current_month, 0)
     
-    # Calculate current month's transactions
-    current_month_credits = sum(
+    # Calculate all time transactions for running balance
+    total_credits = sum(
         expense.amount for expense in expenses 
-        if expense.date.strftime('%Y-%m') == current_month 
-        and expense.transaction_type == 'CR'
+        if expense.transaction_type == 'CR'
     )
     
-    current_month_debits = sum(
+    total_debits = sum(
         expense.amount for expense in expenses 
-        if expense.date.strftime('%Y-%m') == current_month 
-        and expense.transaction_type == 'DR'
+        if expense.transaction_type == 'DR'
     )
     
-    # Calculate current balance (current month salary + current month credits - current month debits)
-    balance = current_month_salary + current_month_credits - current_month_debits
+    # Calculate total salaries received
+    total_salaries = sum(monthly_salaries.values())
+    
+    # Calculate running balance (all salaries + all credits - all debits)
+    balance = total_salaries + total_credits - total_debits
     
     return render_template('salary_visualization.html', 
                          salary_data=salary_data,
                          current_salary=current_month_salary,
                          current_month_name=current_month_name,
-                         total_credits=current_month_credits,
-                         total_debits=current_month_debits,
+                         total_credits=total_credits,
+                         total_debits=total_debits,
                          balance=balance)
 
 @app.route('/health')
