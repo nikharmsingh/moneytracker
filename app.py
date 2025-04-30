@@ -200,30 +200,10 @@ def salary_visualization():
     # Get current month's salary
     current_month_salary = monthly_salaries.get(current_month, 0)
     
-    # Calculate all time transactions for running balance
-    total_credits = sum(
-        expense.amount for expense in expenses 
-        if expense.transaction_type == 'CR'
-    )
-    
-    total_debits = sum(
-        expense.amount for expense in expenses 
-        if expense.transaction_type == 'DR'
-    )
-    
-    # Calculate total salaries received
-    total_salaries = sum(monthly_salaries.values())
-    
-    # Calculate running balance (all salaries + all credits - all debits)
-    balance = total_salaries + total_credits - total_debits
-    
     return render_template('salary_visualization.html', 
                          salary_data=salary_data,
                          current_salary=current_month_salary,
-                         current_month_name=current_month_name,
-                         total_credits=total_credits,
-                         total_debits=total_debits,
-                         balance=balance)
+                         current_month_name=current_month_name)
 
 @app.route('/health')
 def health_check():
