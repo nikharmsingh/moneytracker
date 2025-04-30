@@ -1,9 +1,9 @@
-from flask import Flask, render_template, request, redirect, url_for, flash
+from flask import Flask, render_template, request, redirect, url_for, flash, jsonify
 from flask_login import LoginManager, login_user, login_required, logout_user, current_user
 from datetime import datetime, timedelta
 import os
 from werkzeug.security import generate_password_hash, check_password_hash
-from models import User, Expense, Salary
+from models import User, Expense, Salary, db
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', os.urandom(24))
@@ -223,6 +223,24 @@ def salary_visualization():
                          total_credits=current_month_credits,
                          total_debits=current_month_debits,
                          balance=balance)
+
+@app.route('/health')
+def health_check():
+    try:
+        # Check database connection
+        db.command('ping')
+        db_status = "healthy"
+    except Exception as e:
+        db_status = f"unhealthy: {str(e)}"
+    
+    health_data = {
+        "status": "up",
+        "timestamp": datetime.now().isoformat(),
+        "database": db_status,
+        "version": "1.0.0"
+    }
+    
+    return jsonify(health_data)
 
 if __name__ == '__main__':
     app.run(debug=True) 
