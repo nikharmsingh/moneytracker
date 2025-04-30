@@ -1,12 +1,19 @@
 from flask import Flask, render_template, request, redirect, url_for, flash
 from flask_login import LoginManager, login_user, login_required, logout_user, current_user
-from datetime import datetime
+from datetime import datetime, timedelta
 import os
 from werkzeug.security import generate_password_hash, check_password_hash
 from models import User, Expense, Salary
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', os.urandom(24))
+
+# Add custom Jinja2 filter for currency formatting
+@app.template_filter('format_currency')
+def format_currency(value):
+    if value is None:
+        return "0"
+    return f"{int(value):,}"
 
 login_manager = LoginManager()
 login_manager.init_app(app)
@@ -79,15 +86,27 @@ def home():
 @login_required
 def index():
     expenses = Expense.get_by_user(current_user.id)
-    salaries = Salary.get_by_user(current_user.id)
     
     # Calculate totals based on transaction type
     total_credit = sum(expense.amount for expense in expenses if expense.transaction_type == 'CR')
     total_debit = sum(expense.amount for expense in expenses if expense.transaction_type == 'DR')
-    total_salary = sum(salary.amount for salary in salaries)
     
-    # Balance = Salary + Credits - Debits
-    balance = total_salary + total_credit - total_debit
+    # Calculate current month's debits for average daily spend
+    current_date = datetime.now()
+    current_month = current_date.strftime('%Y-%m')
+    current_month_name = current_date.strftime('%B %Y')  # Format: "April 2024"
+    
+    current_month_debits = sum(
+        expense.amount for expense in expenses 
+        if expense.date.strftime('%Y-%m') == current_month 
+        and expense.transaction_type == 'DR'
+    )
+    
+    # Calculate days passed in current month
+    days_in_month = current_date.day
+    
+    # Calculate average daily spend
+    avg_daily_spend = current_month_debits / days_in_month if days_in_month > 0 else 0
 
     # Calculate category-wise spending
     category_spending = {}
@@ -104,11 +123,10 @@ def index():
     
     return render_template('index.html', 
                          expenses=expenses, 
-                         salaries=salaries, 
                          total_credit=total_credit,
                          total_debit=total_debit,
-                         total_salary=total_salary, 
-                         balance=balance,
+                         avg_daily_spend=avg_daily_spend,
+                         current_month_name=current_month_name,
                          spending_categories=categories,
                          spending_amounts=amounts)
 
@@ -157,6 +175,7 @@ def delete_salary(id):
 @login_required
 def salary_visualization():
     salaries = Salary.get_by_user(current_user.id)
+    expenses = Expense.get_by_user(current_user.id)
     
     # Group salaries by month
     monthly_salaries = {}
@@ -172,8 +191,38 @@ def salary_visualization():
         'months': [datetime.strptime(month, '%Y-%m').strftime('%b %Y') for month in sorted_months],
         'amounts': [monthly_salaries[month] for month in sorted_months]
     }
+
+    # Get current month
+    current_date = datetime.now()
+    current_month = current_date.strftime('%Y-%m')
+    current_month_name = current_date.strftime('%B %Y')  # Format: "April 2024"
     
-    return render_template('salary_visualization.html', salary_data=salary_data)
+    # Get current month's salary
+    current_month_salary = monthly_salaries.get(current_month, 0)
+    
+    # Calculate current month's transactions
+    current_month_credits = sum(
+        expense.amount for expense in expenses 
+        if expense.date.strftime('%Y-%m') == current_month 
+        and expense.transaction_type == 'CR'
+    )
+    
+    current_month_debits = sum(
+        expense.amount for expense in expenses 
+        if expense.date.strftime('%Y-%m') == current_month 
+        and expense.transaction_type == 'DR'
+    )
+    
+    # Calculate current balance (current month salary + current month credits - current month debits)
+    balance = current_month_salary + current_month_credits - current_month_debits
+    
+    return render_template('salary_visualization.html', 
+                         salary_data=salary_data,
+                         current_salary=current_month_salary,
+                         current_month_name=current_month_name,
+                         total_credits=current_month_credits,
+                         total_debits=current_month_debits,
+                         balance=balance)
 
 if __name__ == '__main__':
     app.run(debug=True) 
