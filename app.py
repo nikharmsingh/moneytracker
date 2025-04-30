@@ -70,6 +70,12 @@ def logout():
 
 # Existing Routes
 @app.route('/')
+def home():
+    if current_user.is_authenticated:
+        return redirect(url_for('index'))
+    return render_template('home.html')
+
+@app.route('/dashboard')
 @login_required
 def index():
     expenses = Expense.get_by_user(current_user.id)
