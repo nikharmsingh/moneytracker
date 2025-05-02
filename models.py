@@ -40,7 +40,7 @@ class User(UserMixin):
             'Other'
         ]
         for category_name in default_categories:
-            Category.create(category_name, user_id)
+            Category.create(category_name, user_id, is_global=True)
 
     @staticmethod
     def create(username, password):
@@ -138,13 +138,16 @@ class Category:
         self.id = str(category_data['_id'])
         self.name = category_data['name']
         self.user_id = category_data['user_id']
+        self.is_global = category_data.get('is_global', False)
 
     @staticmethod
-    def create(name, user_id):
+    def create(name, user_id, is_global=False):
         category_data = {
             'name': name,
             'user_id': user_id
         }
+        if is_global:
+            category_data['is_global'] = True
         result = db.categories.insert_one(category_data)
         category_data['_id'] = result.inserted_id
         return Category(category_data)
@@ -156,7 +159,7 @@ class Category:
 
     @staticmethod
     def delete(category_id, user_id):
-        db.categories.delete_one({'_id': ObjectId(category_id), 'user_id': user_id})
+        db.categories.delete_one({'_id': ObjectId(category_id), 'user_id': user_id, 'is_global': {'$ne': True}})
 
     @staticmethod
     def update(category_id, name, user_id):
