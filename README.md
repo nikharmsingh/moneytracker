@@ -12,6 +12,8 @@ A Flask-based web application for tracking personal finances, expenses, and inco
 - Calculate total balance
 - Responsive design with Bootstrap
 - MongoDB database integration
+- **Download transactions as CSV for a custom date range**
+- **Salary card displays previous month's salary if current month is zero**
 
 ## Tech Stack
 
@@ -103,11 +105,13 @@ money-tracker/
    - Interactive pie chart shows spending by category
    - Transaction list shows all entries
    - Delete transactions as needed
+   - **Filter transactions by date range and download filtered data as CSV**
 
 4. **Managing Salary**
    - Add salary entries
    - View total salary and balance
    - Delete salary entries
+   - **If no salary is present for the current month, the dashboard will show the most recent previous month's salary**
 
 ## Deployment
 
