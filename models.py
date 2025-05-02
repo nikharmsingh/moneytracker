@@ -29,6 +29,20 @@ class User(UserMixin):
         return User(user_data) if user_data else None
 
     @staticmethod
+    def create_default_categories(user_id):
+        default_categories = [
+            'Food',
+            'Transport',
+            'Entertainment',
+            'Bills',
+            'Shopping',
+            'Salary',
+            'Other'
+        ]
+        for category_name in default_categories:
+            Category.create(category_name, user_id)
+
+    @staticmethod
     def create(username, password):
         user_data = {
             'username': username,
@@ -36,6 +50,10 @@ class User(UserMixin):
         }
         result = db.users.insert_one(user_data)
         user_data['_id'] = result.inserted_id
+        
+        # Create default categories for the new user
+        User.create_default_categories(str(user_data['_id']))
+        
         return User(user_data)
 
 class Expense:
@@ -47,6 +65,7 @@ class Expense:
         self.date = expense_data['date']
         self.transaction_type = expense_data['transaction_type']
         self.user_id = expense_data['user_id']
+        self.timestamp = expense_data.get('timestamp', datetime.now())
 
     @staticmethod
     def create(amount, category, description, date, transaction_type, user_id):
@@ -56,7 +75,8 @@ class Expense:
             'description': description,
             'date': date,
             'transaction_type': transaction_type,
-            'user_id': user_id
+            'user_id': user_id,
+            'timestamp': datetime.now()
         }
         result = db.expenses.insert_one(expense_data)
         expense_data['_id'] = result.inserted_id
@@ -64,12 +84,27 @@ class Expense:
 
     @staticmethod
     def get_by_user(user_id):
-        expenses = db.expenses.find({'user_id': user_id}).sort('date', -1)
+        expenses = db.expenses.find({'user_id': user_id}).sort('timestamp', -1)
         return [Expense(expense) for expense in expenses]
 
     @staticmethod
     def delete(expense_id, user_id):
         db.expenses.delete_one({'_id': ObjectId(expense_id), 'user_id': user_id})
+
+    @staticmethod
+    def update_category(expense_id, new_category, user_id):
+        db.expenses.update_one(
+            {'_id': ObjectId(expense_id), 'user_id': user_id},
+            {'$set': {'category': new_category}}
+        )
+
+    @staticmethod
+    def add_timestamp_to_existing():
+        # Update all existing expenses that don't have a timestamp
+        db.expenses.update_many(
+            {'timestamp': {'$exists': False}},
+            {'$set': {'timestamp': datetime.now()}}
+        )
 
 class Salary:
     def __init__(self, salary_data):
@@ -96,4 +131,36 @@ class Salary:
 
     @staticmethod
     def delete(salary_id, user_id):
-        db.salaries.delete_one({'_id': ObjectId(salary_id), 'user_id': user_id}) 
+        db.salaries.delete_one({'_id': ObjectId(salary_id), 'user_id': user_id})
+
+class Category:
+    def __init__(self, category_data):
+        self.id = str(category_data['_id'])
+        self.name = category_data['name']
+        self.user_id = category_data['user_id']
+
+    @staticmethod
+    def create(name, user_id):
+        category_data = {
+            'name': name,
+            'user_id': user_id
+        }
+        result = db.categories.insert_one(category_data)
+        category_data['_id'] = result.inserted_id
+        return Category(category_data)
+
+    @staticmethod
+    def get_by_user(user_id):
+        categories = db.categories.find({'user_id': user_id})
+        return [Category(category) for category in categories]
+
+    @staticmethod
+    def delete(category_id, user_id):
+        db.categories.delete_one({'_id': ObjectId(category_id), 'user_id': user_id})
+
+    @staticmethod
+    def update(category_id, name, user_id):
+        db.categories.update_one(
+            {'_id': ObjectId(category_id), 'user_id': user_id},
+            {'$set': {'name': name}}
+        ) 

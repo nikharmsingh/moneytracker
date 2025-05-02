@@ -1,9 +1,11 @@
-from flask import Flask, render_template, request, redirect, url_for, flash, jsonify
+from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, make_response
 from flask_login import LoginManager, login_user, login_required, logout_user, current_user
 from datetime import datetime, timedelta
 import os
+import csv
+from io import StringIO
 from werkzeug.security import generate_password_hash, check_password_hash
-from models import User, Expense, Salary, db
+from models import User, Expense, Salary, db, Category
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', os.urandom(24))
@@ -85,7 +87,15 @@ def home():
 @app.route('/dashboard')
 @login_required
 def index():
+    # Ensure user has default categories
+    categories = Category.get_by_user(current_user.id)
+    if not categories:
+        User.create_default_categories(current_user.id)
+        categories = Category.get_by_user(current_user.id)
+    
+    # Get all expenses sorted by date in descending order
     expenses = Expense.get_by_user(current_user.id)
+    recent_transactions = sorted(expenses, key=lambda x: x.date, reverse=True)[:5]  # Get 5 most recent transactions
     
     # Calculate totals based on transaction type
     total_credit = sum(expense.amount for expense in expenses if expense.transaction_type == 'CR')
@@ -118,8 +128,8 @@ def index():
             category_spending[category] += expense.amount
     
     # Convert to lists for the chart
-    categories = list(category_spending.keys())
-    amounts = list(category_spending.values())
+    spending_categories = list(category_spending.keys())
+    spending_amounts = list(category_spending.values())
     
     return render_template('index.html', 
                          expenses=expenses, 
@@ -127,8 +137,10 @@ def index():
                          total_debit=total_debit,
                          avg_daily_spend=avg_daily_spend,
                          current_month_name=current_month_name,
-                         spending_categories=categories,
-                         spending_amounts=amounts)
+                         spending_categories=spending_categories,
+                         spending_amounts=spending_amounts,
+                         recent_transactions=recent_transactions,
+                         categories=categories)
 
 @app.route('/add_expense', methods=['GET', 'POST'])
 @login_required
@@ -199,6 +211,15 @@ def salary_visualization():
     
     # Get current month's salary
     current_month_salary = monthly_salaries.get(current_month, 0)
+    display_month = current_month_name
+    
+    # If current month salary is zero, show last non-zero month
+    if current_month_salary == 0 and sorted_months:
+        for prev_month in reversed(sorted_months):
+            if monthly_salaries[prev_month] > 0:
+                current_month_salary = monthly_salaries[prev_month]
+                display_month = datetime.strptime(prev_month, '%Y-%m').strftime('%B %Y')
+                break
     
     # Calculate current month's transactions
     current_month_credits = sum(
@@ -216,7 +237,7 @@ def salary_visualization():
     return render_template('salary_visualization.html', 
                          salary_data=salary_data,
                          current_salary=current_month_salary,
-                         current_month_name=current_month_name,
+                         current_month_name=display_month,
                          total_credits=current_month_credits,
                          total_debits=current_month_debits)
 
@@ -237,6 +258,90 @@ def health_check():
     }
     
     return jsonify(health_data)
+
+@app.route('/categories', methods=['GET', 'POST'])
+@login_required
+def manage_categories():
+    if request.method == 'POST':
+        action = request.form.get('action')
+        
+        if action == 'add':
+            name = request.form['name']
+            Category.create(name, current_user.id)
+            flash('Category added successfully!', 'success')
+        elif action == 'update':
+            category_id = request.form['category_id']
+            new_name = request.form['name']
+            Category.update(category_id, new_name, current_user.id)
+            flash('Category updated successfully!', 'success')
+        elif action == 'delete':
+            category_id = request.form['category_id']
+            Category.delete(category_id, current_user.id)
+            flash('Category deleted successfully!', 'success')
+        
+        return redirect(url_for('manage_categories'))
+    
+    categories = Category.get_by_user(current_user.id)
+    return render_template('categories.html', categories=categories)
+
+@app.route('/update_transaction_category/<id>', methods=['POST'])
+@login_required
+def update_transaction_category(id):
+    new_category = request.form['category']
+    Expense.update_category(id, new_category, current_user.id)
+    flash('Transaction category updated successfully!', 'success')
+    return redirect(url_for('index'))
+
+@app.route('/transactions')
+@login_required
+def view_transactions():
+    # Get date range parameters
+    start_date = request.args.get('start_date')
+    end_date = request.args.get('end_date')
+    
+    # Build query based on date range
+    query = {'user_id': current_user.id}
+    if start_date and end_date:
+        query['date'] = {
+            '$gte': datetime.strptime(start_date, '%Y-%m-%d'),
+            '$lte': datetime.strptime(end_date, '%Y-%m-%d')
+        }
+    elif start_date:
+        query['date'] = {'$gte': datetime.strptime(start_date, '%Y-%m-%d')}
+    elif end_date:
+        query['date'] = {'$lte': datetime.strptime(end_date, '%Y-%m-%d')}
+    
+    # Get all expenses sorted by timestamp in descending order
+    expenses = list(db.expenses.find(query).sort('timestamp', -1))
+    categories = Category.get_by_user(current_user.id)
+    
+    # Handle CSV download
+    if request.args.get('download') == 'csv':
+        output = StringIO()
+        writer = csv.writer(output)
+        
+        # Write header
+        writer.writerow(['Date', 'Type', 'Category', 'Amount', 'Description', 'Added On'])
+        
+        # Write data
+        for expense in expenses:
+            writer.writerow([
+                expense['date'].strftime('%Y-%m-%d'),
+                'Credit' if expense['transaction_type'] == 'CR' else 'Debit',
+                expense['category'],
+                expense['amount'],
+                expense['description'],
+                expense['timestamp'].strftime('%Y-%m-%d %H:%M:%S')
+            ])
+        
+        # Create response
+        output.seek(0)
+        response = make_response(output.getvalue())
+        response.headers['Content-Disposition'] = 'attachment; filename=transactions.csv'
+        response.headers['Content-type'] = 'text/csv'
+        return response
+    
+    return render_template('transactions.html', expenses=expenses, categories=categories)
 
 if __name__ == '__main__':
     app.run(debug=True) 
