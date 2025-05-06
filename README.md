@@ -4,16 +4,47 @@ A Flask-based web application for tracking personal finances, expenses, and inco
 
 ## Features
 
-- User authentication (login/register)
-- Track expenses and income (CR/DR transactions)
-- Categorize transactions
-- View spending breakdown with interactive pie chart
-- Track salary/income
-- Calculate total balance
-- Responsive design with Bootstrap
-- MongoDB database integration
-- **Download transactions as CSV for a custom date range**
-- **Salary card displays previous month's salary if current month is zero**
+- **User Authentication**
+
+  - Secure login and registration system
+  - User-specific data isolation
+
+- **Transaction Management**
+
+  - Track both expenses (debits) and income (credits)
+  - Categorize transactions with customizable categories
+  - Add, edit, and delete transactions
+  - Update transaction categories directly from the dashboard
+
+- **Financial Dashboard**
+
+  - Overall financial summary (total credits and debits)
+  - Current month summary with average daily spend
+  - Interactive pie chart for spending by category
+  - Recent transactions list
+
+- **Category Management**
+
+  - Create, edit, and delete custom categories
+  - Global and user-specific categories
+  - Assign categories to transactions
+
+- **Data Filtering & Export**
+
+  - Filter transactions by date range
+  - Filter spending chart by year and month
+  - Download transactions as CSV for custom date ranges
+
+- **Salary Tracking**
+
+  - Track monthly salary/income
+  - Visualize salary history
+  - Automatic display of previous month's salary when current month is zero
+
+- **Responsive Design**
+  - Bootstrap 5 UI components
+  - Mobile-friendly interface
+  - Clean, intuitive user experience
 
 ## Tech Stack
 
@@ -32,12 +63,14 @@ A Flask-based web application for tracking personal finances, expenses, and inco
 ## Installation
 
 1. Clone the repository:
+
 ```bash
 git clone <your-repository-url>
 cd money-tracker
 ```
 
 2. Create and activate a virtual environment:
+
 ```bash
 # On macOS/Linux
 python -m venv venv
@@ -49,12 +82,14 @@ python -m venv venv
 ```
 
 3. Install dependencies:
+
 ```bash
 pip install -r requirements.txt
 ```
 
 4. Set up environment variables:
-Create a `.env` file in the root directory with the following content:
+   Create a `.env` file in the root directory with the following content:
+
 ```
 FLASK_APP=app.py
 FLASK_ENV=development
@@ -63,6 +98,7 @@ MONGODB_URI=your-mongodb-uri-here
 ```
 
 5. Run the application:
+
 ```bash
 python app.py
 ```
@@ -73,66 +109,95 @@ The application will be available at `http://localhost:5000`
 
 ```
 money-tracker/
-├── app.py              # Main application file
-├── models.py           # Database models
-├── requirements.txt    # Python dependencies
-├── .env               # Environment variables
-├── .gitignore         # Git ignore file
-├── templates/         # HTML templates
-│   ├── base.html
-│   ├── index.html
-│   ├── login.html
-│   ├── register.html
-│   ├── add_expense.html
-│   └── add_salary.html
-└── static/            # Static files (CSS, JS, images)
+├── app.py                    # Main application file
+├── models.py                 # Database models
+├── requirements.txt          # Python dependencies
+├── .env                      # Environment variables
+├── .gitignore                # Git ignore file
+├── templates/                # HTML templates
+│   ├── base.html             # Base template with layout
+│   ├── home.html             # Landing page
+│   ├── index.html            # Main dashboard
+│   ├── login.html            # Login page
+│   ├── register.html         # Registration page
+│   ├── add_expense.html      # Add transaction form
+│   ├── add_salary.html       # Add salary form
+│   ├── categories.html       # Category management
+│   ├── transactions.html     # Transaction list with filters
+│   └── salary_visualization.html  # Salary history visualization
+└── static/                   # Static files (CSS, JS, images)
 ```
 
 ## Usage
 
 1. **Registration & Login**
-   - Create a new account
+
+   - Create a new account with a unique username
    - Log in with your credentials
+   - Automatic redirection to dashboard after login
 
-2. **Adding Transactions**
-   - Click "Add Transaction" to add new expenses or income
+2. **Dashboard Overview**
+
+   - View financial summary cards (total credits/debits)
+   - See current month's summary with average daily spend
+   - Visualize spending by category with interactive pie chart
+   - Access recent transactions list
+
+3. **Managing Transactions**
+
+   - Add new transactions with the "Add Transaction" button
    - Select transaction type (Credit/Debit)
-   - Enter amount, category, and description
-   - Choose date (defaults to current date)
-
-3. **Viewing Transactions**
-   - Dashboard shows summary cards
-   - Interactive pie chart shows spending by category
-   - Transaction list shows all entries
+   - Assign a category and enter amount and description
+   - Choose transaction date (defaults to current date)
+   - Update transaction categories directly from the dashboard
    - Delete transactions as needed
-   - **Filter transactions by date range and download filtered data as CSV**
 
-4. **Managing Salary**
-   - Add salary entries
-   - View total salary and balance
-   - Delete salary entries
-   - **If no salary is present for the current month, the dashboard will show the most recent previous month's salary**
+4. **Category Management**
+
+   - Access category management via "Manage Categories" button
+   - Create new custom categories
+   - Edit existing categories (user-specific only)
+   - Delete categories (user-specific only)
+
+5. **Filtering & Data Export**
+
+   - Filter spending chart by year and month
+   - View transactions list with date range filters
+   - Export filtered transactions as CSV file
+
+6. **Salary Tracking**
+   - Add monthly salary entries
+   - View salary history visualization
+   - Track salary trends over time
+
+## Health Check Endpoint
+
+The application includes a `/health` endpoint that returns the status of the application and database connection, useful for monitoring in production environments.
 
 ## Deployment
 
 The application is configured for deployment on Render.com:
 
 1. **Create a Render.com Account**
+
    - Sign up at [Render.com](https://render.com)
    - Connect your GitHub account
 
 2. **Create a New Web Service**
+
    - Click "New +" and select "Web Service"
    - Connect your GitHub repository
    - Select the branch to deploy (usually `main` or `master`)
 
 3. **Configure the Service**
+
    - Name: `money-tracker` (or your preferred name)
    - Environment: `Python`
    - Build Command: `pip install -r requirements.txt`
    - Start Command: `gunicorn app:app`
 
 4. **Set Environment Variables**
+
    - Click on "Environment" tab
    - Add the following variables:
      ```
@@ -144,6 +209,7 @@ The application is configured for deployment on Render.com:
    - For `MONGODB_URI`, paste your MongoDB Atlas connection string
 
 5. **Deploy**
+
    - Click "Create Web Service"
    - Render will automatically deploy your application
    - The deployment URL will be provided once complete
@@ -154,6 +220,7 @@ The application is configured for deployment on Render.com:
    - Set up automatic deployments for future updates
 
 Note: Make sure your MongoDB Atlas database allows connections from Render's IP addresses. You may need to:
+
 - Add `0.0.0.0/0` to your MongoDB Atlas IP whitelist
 - Or add specific Render IP addresses to your whitelist
 
@@ -173,4 +240,4 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 - Flask for the web framework
 - MongoDB for the database
 - Bootstrap for the UI components
-- Chart.js for data visualization 
+- Chart.js for data visualization
