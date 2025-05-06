@@ -92,10 +92,23 @@ def index():
     if not categories:
         User.create_default_categories(current_user.id)
         categories = Category.get_by_user(current_user.id)
+    # Deduplicate by name, prefer user-specific over global
+    unique_categories = {}
+    for c in categories:
+        if c.name not in unique_categories or not c.is_global:
+            unique_categories[c.name] = c
+    categories = list(unique_categories.values())
     
     # Get all expenses sorted by date in descending order
     expenses = Expense.get_by_user(current_user.id)
-    recent_transactions = sorted(expenses, key=lambda x: x.date, reverse=True)[:5]  # Get 5 most recent transactions
+    
+    # Build a lookup dictionary for category_id to name
+    category_dict = {c.id: c.name for c in categories}
+    for expense in expenses:
+        expense.category_name = category_dict.get(expense.category_id, 'Unknown')
+    
+    # Get 5 most recent transactions
+    recent_transactions = sorted(expenses, key=lambda x: x.date, reverse=True)[:5]
     
     # Calculate totals based on transaction type
     total_credit = sum(expense.amount for expense in expenses if expense.transaction_type == 'CR')
@@ -122,7 +135,7 @@ def index():
     category_spending = {}
     for expense in expenses:
         if expense.transaction_type == 'DR':  # Only count debits for spending
-            category = expense.category
+            category = expense.category_name
             if category not in category_spending:
                 category_spending[category] = 0
             category_spending[category] += expense.amount
@@ -147,15 +160,24 @@ def index():
 def add_expense():
     if request.method == 'POST':
         amount = float(request.form['amount'])
-        category = request.form['category']
+        category_id = request.form['category']  # Now this is the category's _id
         description = request.form['description']
         date = datetime.strptime(request.form['date'], '%Y-%m-%d')
         transaction_type = request.form['transaction_type']
         
-        Expense.create(amount, category, description, date, transaction_type, current_user.id)
+        Expense.create(amount, category_id, description, date, transaction_type, current_user.id)
         flash('Expense added successfully!')
         return redirect(url_for('index'))
-    return render_template('add_expense.html')
+    
+    # Get both global and user-specific categories
+    categories = Category.get_by_user(current_user.id)
+    # Deduplicate by name, prefer user-specific over global
+    unique_categories = {}
+    for c in categories:
+        if c.name not in unique_categories or not c.is_global:
+            unique_categories[c.name] = c
+    categories = list(unique_categories.values())
+    return render_template('add_expense.html', categories=categories)
 
 @app.route('/add_salary', methods=['GET', 'POST'])
 @login_required
@@ -267,28 +289,37 @@ def manage_categories():
         
         if action == 'add':
             name = request.form['name']
-            Category.create(name, current_user.id)
+            Category.create(name, current_user.id, is_global=False)  # New categories are always non-global
             flash('Category added successfully!', 'success')
         elif action == 'update':
             category_id = request.form['category_id']
             new_name = request.form['name']
+            # Only allow updating user's own categories
             Category.update(category_id, new_name, current_user.id)
             flash('Category updated successfully!', 'success')
         elif action == 'delete':
             category_id = request.form['category_id']
+            # Only allow deleting user's own categories
             Category.delete(category_id, current_user.id)
             flash('Category deleted successfully!', 'success')
         
         return redirect(url_for('manage_categories'))
     
+    # Get both user-specific and global categories
     categories = Category.get_by_user(current_user.id)
+    # Deduplicate by name, prefer user-specific over global
+    unique_categories = {}
+    for c in categories:
+        if c.name not in unique_categories or not c.is_global:
+            unique_categories[c.name] = c
+    categories = list(unique_categories.values())
     return render_template('categories.html', categories=categories)
 
 @app.route('/update_transaction_category/<id>', methods=['POST'])
 @login_required
 def update_transaction_category(id):
-    new_category = request.form['category']
-    Expense.update_category(id, new_category, current_user.id)
+    new_category_id = request.form['category']
+    Expense.update_category(id, new_category_id, current_user.id)
     flash('Transaction category updated successfully!', 'success')
     return redirect(url_for('index'))
 
@@ -313,7 +344,23 @@ def view_transactions():
     
     # Get all expenses sorted by timestamp in descending order
     expenses = list(db.expenses.find(query).sort('timestamp', -1))
+    
+    # Get both global and user-specific categories
     categories = Category.get_by_user(current_user.id)
+    # Deduplicate by name, prefer user-specific over global
+    unique_categories = {}
+    for c in categories:
+        if c.name not in unique_categories or not c.is_global:
+            unique_categories[c.name] = c
+    categories = list(unique_categories.values())
+    category_dict = {c.id: c.name for c in categories}
+    
+    # Convert expenses to Expense objects for consistent handling
+    expenses = [Expense(expense) for expense in expenses]
+    
+    # Attach category name to each expense
+    for expense in expenses:
+        expense.category_name = category_dict.get(expense.category_id, 'Unknown')
     
     # Handle CSV download
     if request.args.get('download') == 'csv':
@@ -326,12 +373,12 @@ def view_transactions():
         # Write data
         for expense in expenses:
             writer.writerow([
-                expense['date'].strftime('%Y-%m-%d'),
-                'Credit' if expense['transaction_type'] == 'CR' else 'Debit',
-                expense['category'],
-                expense['amount'],
-                expense['description'],
-                expense['timestamp'].strftime('%Y-%m-%d %H:%M:%S')
+                expense.date.strftime('%Y-%m-%d'),
+                'Credit' if expense.transaction_type == 'CR' else 'Debit',
+                expense.category_name,
+                expense.amount,
+                expense.description,
+                expense.timestamp.strftime('%Y-%m-%d %H:%M:%S')
             ])
         
         # Create response

@@ -60,7 +60,7 @@ class Expense:
     def __init__(self, expense_data):
         self.id = str(expense_data['_id'])
         self.amount = expense_data['amount']
-        self.category = expense_data['category']
+        self.category_id = str(expense_data['category_id']) if 'category_id' in expense_data else None
         self.description = expense_data.get('description', '')
         self.date = expense_data['date']
         self.transaction_type = expense_data['transaction_type']
@@ -68,10 +68,13 @@ class Expense:
         self.timestamp = expense_data.get('timestamp', datetime.now())
 
     @staticmethod
-    def create(amount, category, description, date, transaction_type, user_id):
+    def create(amount, category_id, description, date, transaction_type, user_id):
+        # Convert category_id to ObjectId if needed
+        if isinstance(category_id, str):
+            category_id = ObjectId(category_id)
         expense_data = {
             'amount': amount,
-            'category': category,
+            'category_id': category_id,
             'description': description,
             'date': date,
             'transaction_type': transaction_type,
@@ -92,10 +95,13 @@ class Expense:
         db.expenses.delete_one({'_id': ObjectId(expense_id), 'user_id': user_id})
 
     @staticmethod
-    def update_category(expense_id, new_category, user_id):
+    def update_category(expense_id, new_category_id, user_id):
+        # Convert new_category_id to ObjectId if needed
+        if isinstance(new_category_id, str):
+            new_category_id = ObjectId(new_category_id)
         db.expenses.update_one(
             {'_id': ObjectId(expense_id), 'user_id': user_id},
-            {'$set': {'category': new_category}}
+            {'$set': {'category_id': new_category_id}}
         )
 
     @staticmethod
@@ -137,24 +143,37 @@ class Category:
     def __init__(self, category_data):
         self.id = str(category_data['_id'])
         self.name = category_data['name']
-        self.user_id = category_data['user_id']
+        self.user_id = category_data.get('user_id')
         self.is_global = category_data.get('is_global', False)
 
     @staticmethod
     def create(name, user_id, is_global=False):
         category_data = {
             'name': name,
-            'user_id': user_id
         }
         if is_global:
             category_data['is_global'] = True
+        else:
+            # Convert string user_id to ObjectId if needed
+            if isinstance(user_id, str):
+                user_id = ObjectId(user_id)
+            category_data['user_id'] = user_id
         result = db.categories.insert_one(category_data)
         category_data['_id'] = result.inserted_id
         return Category(category_data)
 
     @staticmethod
     def get_by_user(user_id):
-        categories = db.categories.find({'user_id': user_id})
+        # Convert string user_id to ObjectId if needed
+        if isinstance(user_id, str):
+            user_id = ObjectId(user_id)
+        # Get both user-specific and global categories
+        categories = db.categories.find({
+            '$or': [
+                {'user_id': user_id},
+                {'is_global': True}
+            ]
+        }).sort('name', 1)  # Sort by name for consistent ordering
         return [Category(category) for category in categories]
 
     @staticmethod
