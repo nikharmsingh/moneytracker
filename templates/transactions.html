@@ -53,10 +53,10 @@
                   {% endif %}
                 </td>
                 <td>
-                  <form method="POST" action="{{ url_for('update_transaction_category', id=expense['_id']) }}" class="d-inline">
+                  <form method="POST" action="{{ url_for('update_transaction_category', id=expense.id) }}" class="d-inline">
                     <select name="category" class="form-select form-select-sm" onchange="this.form.submit()">
                       {% for category in categories %}
-                        <option value="{{ category.name }}" {% if category.name == expense.category %}selected{% endif %}>
+                        <option value="{{ category.id }}" {% if category.name == expense.category_name %}selected{% endif %}>
                           {{ category.name }}
                         </option>
                       {% endfor %}

@@ -93,7 +93,7 @@
                   <form method="POST" action="{{ url_for('update_transaction_category', id=transaction.id) }}" class="d-inline">
                     <select name="category" class="form-select form-select-sm" onchange="this.form.submit()">
                       {% for category in categories %}
-                        <option value="{{ category.name }}" {% if category.name == transaction.category %}selected{% endif %}>
+                        <option value="{{ category.id }}" {% if category.name == transaction.category_name %}selected{% endif %}>
                           {{ category.name }}
                         </option>
                       {% endfor %}
