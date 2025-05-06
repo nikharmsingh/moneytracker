@@ -4,9 +4,14 @@
 <div class="row">
   <div class="col-md-12 mb-4">
     <div class="card">
+      <div class="card-header">
+        <h3 class="mb-0">Financial Summary</h3>
+      </div>
       <div class="card-body">
-        <div class="row">
-          <div class="col-md-4">
+        <!-- Overall Summary (Larger) -->
+        <h4 class="mb-3">Overall Summary</h4>
+        <div class="row mb-4">
+          <div class="col-md-6">
             <div class="card bg-success text-white">
               <div class="card-body">
                 <h5 class="card-title">Total Credits</h5>
@@ -14,7 +19,7 @@
               </div>
             </div>
           </div>
-          <div class="col-md-4">
+          <div class="col-md-6">
             <div class="card bg-danger text-white">
               <div class="card-body">
                 <h5 class="card-title">Total Spends</h5>
@@ -22,12 +27,32 @@
               </div>
             </div>
           </div>
+        </div>
+        
+        <!-- Current Month Summary (Smaller) -->
+        <h5 class="mb-3">{{ current_month_name }} Summary</h5>
+        <div class="row">
+          <div class="col-md-4">
+            <div class="card bg-success text-white">
+              <div class="card-body py-2">
+                <h6 class="card-title">Month Credits</h6>
+                <h4 class="mb-0">₹{{ "%.2f"|format(current_month_credits) }}</h4>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-4">
+            <div class="card bg-danger text-white">
+              <div class="card-body py-2">
+                <h6 class="card-title">Month Spends</h6>
+                <h4 class="mb-0">₹{{ "%.2f"|format(current_month_debits) }}</h4>
+              </div>
+            </div>
+          </div>
           <div class="col-md-4">
             <div class="card bg-info text-white">
-              <div class="card-body">
-                <h5 class="card-title">Average Daily Spend</h5>
-                <h2 class="mb-0">₹{{ "%.2f"|format(avg_daily_spend) }}</h2>
-                <small class="text-white-50">For {{ current_month_name }}</small>
+              <div class="card-body py-2">
+                <h6 class="card-title">Avg. Daily Spend</h6>
+                <h4 class="mb-0">₹{{ "%.2f"|format(avg_daily_spend) }}</h4>
               </div>
             </div>
           </div>

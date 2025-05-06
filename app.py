@@ -120,7 +120,7 @@ def index():
     total_credit = sum(expense.amount for expense in expenses if expense.transaction_type == 'CR')
     total_debit = sum(expense.amount for expense in expenses if expense.transaction_type == 'DR')
     
-    # Calculate current month's debits for average daily spend
+    # Calculate current month's credits and debits
     current_date = datetime.now()
     current_month = current_date.strftime('%Y-%m')
     current_month_name = current_date.strftime('%B %Y')  # Format: "April 2024"
@@ -129,6 +129,12 @@ def index():
         expense.amount for expense in expenses 
         if expense.date.strftime('%Y-%m') == current_month 
         and expense.transaction_type == 'DR'
+    )
+    
+    current_month_credits = sum(
+        expense.amount for expense in expenses 
+        if expense.date.strftime('%Y-%m') == current_month 
+        and expense.transaction_type == 'CR'
     )
     
     # Calculate days passed in current month
@@ -161,6 +167,8 @@ def index():
                          expenses=expenses, 
                          total_credit=total_credit,
                          total_debit=total_debit,
+                         current_month_credits=current_month_credits,
+                         current_month_debits=current_month_debits,
                          avg_daily_spend=avg_daily_spend,
                          current_month_name=current_month_name,
                          spending_categories=spending_categories,
