@@ -68,13 +68,58 @@
       <div class="card-header d-flex justify-content-between align-items-center">
         <h3 class="mb-0">
           <i class="bi bi-pie-chart me-2"></i>Spending by Category
+          {% if filter_year != 'all' %}
+            <small class="text-muted">
+              ({{ filter_month_name }} {{ filter_year }})
+            </small>
+          {% endif %}
         </h3>
-        <a href="{{ url_for('manage_categories') }}" class="btn btn-primary btn-sm">
-          <i class="bi bi-tags me-1"></i>Manage Categories
-        </a>
+        <div class="d-flex gap-2">
+          <a href="{{ url_for('manage_categories') }}" class="btn btn-primary btn-sm">
+            <i class="bi bi-tags me-1"></i>Manage Categories
+          </a>
+        </div>
       </div>
       <div class="card-body">
+        <form id="categoryFilterForm" class="mb-3 row g-2 align-items-center">
+          <div class="col-auto">
+            <label for="yearFilter" class="visually-hidden">Year</label>
+            <select id="yearFilter" name="year" class="form-select form-select-sm" onchange="updateMonthOptions()">
+              <option value="all" {% if filter_year == 'all' %}selected{% endif %}>All Years</option>
+              {% for year in available_years %}
+                <option value="{{ year }}" {% if filter_year == year|string %}selected{% endif %}>{{ year }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="col-auto">
+            <label for="monthFilter" class="visually-hidden">Month</label>
+            <select id="monthFilter" name="month" class="form-select form-select-sm" {% if filter_year == 'all' %}disabled{% endif %}>
+              <option value="all" {% if filter_month == 'all' %}selected{% endif %}>All Months</option>
+              {% if filter_year != 'all' and filter_year|int in available_months %}
+                {% for month in available_months[filter_year|int] %}
+                  <option value="{{ month }}" {% if filter_month == month|string %}selected{% endif %}>
+                    {% set month_names = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'] %}
+                    {{ month_names[month-1] }}
+                  </option>
+                {% endfor %}
+              {% endif %}
+            </select>
+          </div>
+          <div class="col-auto">
+            <button type="submit" class="btn btn-sm btn-primary">Apply</button>
+            {% if filter_year != 'all' or filter_month != 'all' %}
+              <a href="{{ url_for('index') }}" class="btn btn-sm btn-outline-secondary">Reset</a>
+            {% endif %}
+          </div>
+        </form>
+        
         <canvas id="spendingChart"></canvas>
+        
+        {% if not spending_categories %}
+          <div class="alert alert-info mt-3">
+            No spending data available for the selected period.
+          </div>
+        {% endif %}
       </div>
     </div>
   </div>
@@ -145,45 +190,88 @@
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
+  // Available months data from backend
+  const availableMonths = {{ available_months|tojson }};
+  
+  // Function to update month options based on selected year
+  function updateMonthOptions() {
+    const yearSelect = document.getElementById('yearFilter');
+    const monthSelect = document.getElementById('monthFilter');
+    const selectedYear = yearSelect.value;
+    
+    // Clear existing options except the first one (All Months)
+    while (monthSelect.options.length > 1) {
+      monthSelect.remove(1);
+    }
+    
+    // If "All Years" is selected, disable the month dropdown
+    if (selectedYear === 'all') {
+      monthSelect.disabled = true;
+      monthSelect.value = 'all';
+      return;
+    }
+    
+    // Enable the month dropdown
+    monthSelect.disabled = false;
+    
+    // Add month options for the selected year
+    const monthNames = [
+      'January', 'February', 'March', 'April', 'May', 'June',
+      'July', 'August', 'September', 'October', 'November', 'December'
+    ];
+    
+    if (availableMonths[selectedYear]) {
+      availableMonths[selectedYear].forEach(month => {
+        const option = document.createElement('option');
+        option.value = month;
+        option.textContent = monthNames[month - 1];
+        monthSelect.appendChild(option);
+      });
+    }
+  }
+  
   // Spending by Category Chart
   const ctx = document.getElementById('spendingChart');
+  
+  {% if spending_categories %}
   new Chart(ctx, {
     type: 'pie',
     data: {
       labels: {{ spending_categories| tojson }},
-    datasets: [{
-      data: {{ spending_amounts| tojson }},
-    backgroundColor: [
-      '#FF6384',
-      '#36A2EB',
-      '#FFCE56',
-      '#4BC0C0',
-      '#9966FF',
-      '#FF9F40',
-      '#8AC24A',
-      '#FF5252',
-      '#7E57C2',
-      '#26A69A'
-    ]
+      datasets: [{
+        data: {{ spending_amounts| tojson }},
+        backgroundColor: [
+          '#FF6384',
+          '#36A2EB',
+          '#FFCE56',
+          '#4BC0C0',
+          '#9966FF',
+          '#FF9F40',
+          '#8AC24A',
+          '#FF5252',
+          '#7E57C2',
+          '#26A69A'
+        ]
       }]
     },
     options: {
-    responsive: true,
-    plugins: {
-      legend: {
-        position: 'right',
-      },
-      tooltip: {
-        callbacks: {
-          label: function (context) {
-            let label = context.label || '';
-            let value = context.raw || 0;
-            return `${label}: ₹${value.toFixed(2)}`;
+      responsive: true,
+      plugins: {
+        legend: {
+          position: 'right',
+        },
+        tooltip: {
+          callbacks: {
+            label: function (context) {
+              let label = context.label || '';
+              let value = context.raw || 0;
+              return `${label}: ₹${value.toFixed(2)}`;
+            }
           }
         }
       }
     }
-  }
   });
+  {% endif %}
 </script>
 {% endblock %}

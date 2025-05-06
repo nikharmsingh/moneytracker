@@ -143,10 +143,34 @@ def index():
     # Calculate average daily spend
     avg_daily_spend = current_month_debits / days_in_month if days_in_month > 0 else 0
 
-    # Calculate category-wise spending
+    # Get available years and months for filtering
+    date_range = {}
+    for expense in expenses:
+        if expense.transaction_type == 'DR':  # Only count debits for spending
+            year = expense.date.year
+            month = expense.date.month
+            if year not in date_range:
+                date_range[year] = set()
+            date_range[year].add(month)
+    
+    # Sort years and months
+    available_years = sorted(date_range.keys(), reverse=True)
+    available_months = {year: sorted(months) for year, months in date_range.items()}
+    
+    # Get filter parameters
+    filter_year = request.args.get('year', 'all')
+    filter_month = request.args.get('month', 'all')
+    
+    # Calculate category-wise spending with optional filtering
     category_spending = {}
     for expense in expenses:
         if expense.transaction_type == 'DR':  # Only count debits for spending
+            # Apply filters if set
+            if filter_year != 'all' and str(expense.date.year) != filter_year:
+                continue
+            if filter_month != 'all' and filter_year != 'all' and expense.date.month != int(filter_month):
+                continue
+                
             category = expense.category_name
             if category not in category_spending:
                 category_spending[category] = 0
@@ -163,6 +187,11 @@ def index():
     spending_categories = list(filtered_spending.keys())
     spending_amounts = list(filtered_spending.values())
     
+    # Get month name for display
+    month_names = ['January', 'February', 'March', 'April', 'May', 'June', 
+                  'July', 'August', 'September', 'October', 'November', 'December']
+    filter_month_name = month_names[int(filter_month) - 1] if filter_month != 'all' and filter_month.isdigit() else 'All'
+    
     return render_template('index.html', 
                          expenses=expenses, 
                          total_credit=total_credit,
@@ -174,7 +203,12 @@ def index():
                          spending_categories=spending_categories,
                          spending_amounts=spending_amounts,
                          recent_transactions=recent_transactions,
-                         categories=categories)
+                         categories=categories,
+                         available_years=available_years,
+                         available_months=available_months,
+                         filter_year=filter_year,
+                         filter_month=filter_month,
+                         filter_month_name=filter_month_name)
 
 @app.route('/add_expense', methods=['GET', 'POST'])
 @login_required
