@@ -87,6 +87,9 @@ def home():
 @app.route('/dashboard')
 @login_required
 def index():
+    # Fix any categories missing the is_global flag
+    Category.fix_missing_is_global()
+    
     # Ensure user has default categories
     categories = Category.get_by_user(current_user.id)
     if not categories:
@@ -98,6 +101,9 @@ def index():
         if c.name not in unique_categories or not c.is_global:
             unique_categories[c.name] = c
     categories = list(unique_categories.values())
+    
+    # Fix any transactions with invalid category IDs
+    Expense.fix_invalid_categories(current_user.id)
     
     # Get all expenses sorted by date in descending order
     expenses = Expense.get_by_user(current_user.id)
@@ -140,9 +146,16 @@ def index():
                 category_spending[category] = 0
             category_spending[category] += expense.amount
     
+    # Filter out "Unknown" category for the chart
+    filtered_spending = {k: v for k, v in category_spending.items() if k != 'Unknown'}
+    
+    # If there are any expenses with "Unknown" category, add an "Other" category
+    if 'Unknown' in category_spending and category_spending['Unknown'] > 0:
+        filtered_spending['Other'] = category_spending['Unknown']
+    
     # Convert to lists for the chart
-    spending_categories = list(category_spending.keys())
-    spending_amounts = list(category_spending.values())
+    spending_categories = list(filtered_spending.keys())
+    spending_amounts = list(filtered_spending.values())
     
     return render_template('index.html', 
                          expenses=expenses, 
@@ -284,6 +297,9 @@ def health_check():
 @app.route('/categories', methods=['GET', 'POST'])
 @login_required
 def manage_categories():
+    # Fix any categories missing the is_global flag
+    Category.fix_missing_is_global()
+    
     if request.method == 'POST':
         action = request.form.get('action')
         
@@ -329,6 +345,9 @@ def view_transactions():
     # Get date range parameters
     start_date = request.args.get('start_date')
     end_date = request.args.get('end_date')
+    
+    # Fix any transactions with invalid category IDs
+    Expense.fix_invalid_categories(current_user.id)
     
     # Build query based on date range
     query = {'user_id': current_user.id}

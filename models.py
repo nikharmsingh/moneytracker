@@ -111,6 +111,39 @@ class Expense:
             {'timestamp': {'$exists': False}},
             {'$set': {'timestamp': datetime.now()}}
         )
+        
+    @staticmethod
+    def fix_invalid_categories(user_id):
+        """Fix expenses with invalid category IDs by setting them to a default category"""
+        # Get all valid category IDs for the user
+        categories = Category.get_by_user(user_id)
+        valid_category_ids = [ObjectId(c.id) for c in categories]
+        
+        # Find a default category (preferably 'Other' or the first available)
+        default_category = None
+        for category in categories:
+            if category.name == 'Other':
+                default_category = category
+                break
+        
+        # If 'Other' category doesn't exist, use the first category or create 'Other'
+        if not default_category and categories:
+            default_category = categories[0]
+        elif not default_category:
+            # Create 'Other' category if no categories exist
+            default_category = Category.create('Other', user_id, is_global=True)
+        
+        # Update expenses with invalid category IDs
+        db.expenses.update_many(
+            {
+                'user_id': user_id,
+                '$or': [
+                    {'category_id': {'$nin': valid_category_ids}},
+                    {'category_id': {'$exists': False}}
+                ]
+            },
+            {'$set': {'category_id': ObjectId(default_category.id)}}
+        )
 
 class Salary:
     def __init__(self, salary_data):
@@ -150,14 +183,16 @@ class Category:
     def create(name, user_id, is_global=False):
         category_data = {
             'name': name,
+            'is_global': is_global  # Always include is_global flag
         }
-        if is_global:
-            category_data['is_global'] = True
-        else:
+        
+        # Add user_id for non-global categories
+        if not is_global:
             # Convert string user_id to ObjectId if needed
             if isinstance(user_id, str):
                 user_id = ObjectId(user_id)
             category_data['user_id'] = user_id
+            
         result = db.categories.insert_one(category_data)
         category_data['_id'] = result.inserted_id
         return Category(category_data)
@@ -185,4 +220,12 @@ class Category:
         db.categories.update_one(
             {'_id': ObjectId(category_id), 'user_id': user_id},
             {'$set': {'name': name}}
-        ) 
+        )
+        
+    @staticmethod
+    def fix_missing_is_global():
+        """Add is_global=False to any categories that don't have the flag"""
+        db.categories.update_many(
+            {'is_global': {'$exists': False}},
+            {'$set': {'is_global': False}}
+        )
