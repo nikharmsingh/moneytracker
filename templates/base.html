@@ -11,60 +11,96 @@
 </head>
 
 <body>
-  <nav class="navbar navbar-expand-lg navbar-dark">
+  <nav class="navbar navbar-dark">
     <div class="container">
-      <a class="navbar-brand" href="{{ url_for('index') }}">
+      <!-- Brand -->
+      <a class="navbar-brand" href="{{ url_for('index') if current_user.is_authenticated else url_for('home') }}">
         <i class="bi bi-wallet2 me-2"></i>Money Tracker
       </a>
-      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-        <span class="navbar-toggler-icon"></span>
-      </button>
-      <div class="collapse navbar-collapse" id="navbarNav">
-        <ul class="navbar-nav ms-auto">
-          {% if current_user.is_authenticated %}
-          <li class="nav-item">
-            <a class="nav-link" href="{{ url_for('index') }}">
-              <i class="bi bi-speedometer2 me-1"></i>Dashboard
-            </a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link" href="{{ url_for('view_transactions') }}">
-              <i class="bi bi-list-ul me-1"></i>All Transactions
-            </a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link" href="{{ url_for('add_expense') }}">
-              <i class="bi bi-cash-stack me-1"></i>Add Expense
-            </a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link" href="{{ url_for('add_salary') }}">
-              <i class="bi bi-bank me-1"></i>Add Salary
-            </a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link" href="{{ url_for('salary_visualization') }}">
-              <i class="bi bi-graph-up me-1"></i>Salary Overview
-            </a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link" href="{{ url_for('logout') }}">
-              <i class="bi bi-box-arrow-right me-1"></i>Logout
-            </a>
-          </li>
-          {% else %}
-          <li class="nav-item">
-            <a class="nav-link" href="{{ url_for('login') }}">
-              <i class="bi bi-box-arrow-in-right me-1"></i>Login
-            </a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link" href="{{ url_for('register') }}">
-              <i class="bi bi-person-plus me-1"></i>Register
-            </a>
-          </li>
-          {% endif %}
-        </ul>
+      
+      <div class="d-flex align-items-center">
+        {% if current_user.is_authenticated %}
+        <!-- Always visible profile and logout buttons -->
+        <div class="d-flex me-2">
+          <a href="{{ url_for('profile') }}" class="btn btn-outline-light btn-sm me-2">
+            <i class="bi bi-person-circle me-1"></i>Profile
+          </a>
+          <a href="{{ url_for('logout') }}" class="btn btn-outline-light btn-sm">
+            <i class="bi bi-box-arrow-right me-1"></i>Logout
+          </a>
+        </div>
+        {% else %}
+        <!-- Always visible login and register buttons for non-authenticated users -->
+        <div class="d-flex me-2">
+          <a href="{{ url_for('login') }}" class="btn btn-outline-light btn-sm me-2">
+            <i class="bi bi-box-arrow-in-right me-1"></i>Login
+          </a>
+          <a href="{{ url_for('register') }}" class="btn btn-outline-light btn-sm">
+            <i class="bi bi-person-plus me-1"></i>Register
+          </a>
+        </div>
+        {% endif %}
+        
+        <!-- Hamburger button -->
+        <button class="navbar-toggler" type="button" data-bs-toggle="offcanvas" data-bs-target="#offcanvasNavbar">
+          <span class="navbar-toggler-icon"></span>
+        </button>
+      </div>
+      
+      <!-- Offcanvas sidebar for menu items -->
+      <div class="offcanvas offcanvas-end bg-dark text-white" tabindex="-1" id="offcanvasNavbar">
+        <div class="offcanvas-header">
+          <h5 class="offcanvas-title">
+            {% if current_user.is_authenticated %}
+            <i class="bi bi-person-check me-1"></i>Welcome, {{ current_user.username }}
+            {% else %}
+            <i class="bi bi-wallet2 me-1"></i>Money Tracker
+            {% endif %}
+          </h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+        </div>
+        <div class="offcanvas-body">
+          <ul class="navbar-nav">
+            {% if current_user.is_authenticated %}
+            <li class="nav-item">
+              <a class="nav-link" href="{{ url_for('index') }}">
+                <i class="bi bi-speedometer2 me-1"></i>Dashboard
+              </a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="{{ url_for('view_transactions') }}">
+                <i class="bi bi-list-ul me-1"></i>All Transactions
+              </a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="{{ url_for('add_expense') }}">
+                <i class="bi bi-cash-stack me-1"></i>Add Expense
+              </a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="{{ url_for('add_salary') }}">
+                <i class="bi bi-bank me-1"></i>Add Salary
+              </a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="{{ url_for('salary_visualization') }}">
+                <i class="bi bi-graph-up me-1"></i>Salary Overview
+              </a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="{{ url_for('manage_categories') }}">
+                <i class="bi bi-tags me-1"></i>Categories
+              </a>
+            </li>
+            {% else %}
+            <li class="nav-item">
+              <a class="nav-link" href="{{ url_for('home') }}">
+                <i class="bi bi-house me-1"></i>Home
+              </a>
+            </li>
+            {% endif %}
+          </ul>
+        </div>
       </div>
     </div>
   </nav>

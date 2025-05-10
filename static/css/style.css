@@ -28,6 +28,65 @@ body {
   font-size: 1.5rem;
 }
 
+/* Navbar button styles */
+.navbar .btn-outline-light {
+  border-color: rgba(255, 255, 255, 0.5);
+  transition: all 0.3s ease;
+}
+
+.navbar .btn-outline-light:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+  transform: translateY(-2px);
+}
+
+/* Offcanvas menu styling */
+.offcanvas {
+  max-width: 80%;
+}
+
+.offcanvas-header {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.offcanvas-title {
+  font-weight: 600;
+  color: white;
+}
+
+.offcanvas .nav-link {
+  color: rgba(255, 255, 255, 0.8);
+  padding: 0.75rem 1rem;
+  border-radius: 5px;
+  transition: all 0.2s ease;
+}
+
+.offcanvas .nav-link:hover, 
+.offcanvas .nav-link:focus {
+  background-color: rgba(255, 255, 255, 0.1);
+  color: white;
+}
+
+.offcanvas .nav-item {
+  margin-bottom: 0.25rem;
+}
+
+/* Responsive navbar adjustments */
+@media (max-width: 576px) {
+  .navbar .container {
+    padding-left: 15px;
+    padding-right: 15px;
+  }
+  
+  .navbar .btn-sm {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.75rem;
+  }
+  
+  .offcanvas {
+    max-width: 85%;
+  }
+}
+
 .card {
   border: none;
   border-radius: var(--border-radius);

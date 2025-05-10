@@ -1,0 +1,128 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white">
+                    <h3 class="mb-0">
+                        <i class="bi bi-person-circle me-2"></i>User Profile
+                    </h3>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-4">
+                        <div class="col-md-3 text-center">
+                            <div class="profile-avatar mb-3">
+                                <i class="bi bi-person-circle" style="font-size: 5rem; color: #6c757d;"></i>
+                            </div>
+                        </div>
+                        <div class="col-md-9">
+                            <div class="profile-info">
+                                <h4 class="mb-3">Account Information</h4>
+                                <div class="mb-3">
+                                    <label class="form-label fw-bold">Username</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text"><i class="bi bi-person"></i></span>
+                                        <input type="text" class="form-control" value="{{ current_user.username }}" readonly>
+                                    </div>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label fw-bold">Email</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text"><i class="bi bi-envelope"></i></span>
+                                        <input type="email" class="form-control" value="{{ current_user.email }}" readonly>
+                                    </div>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label fw-bold">Member Since</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text"><i class="bi bi-calendar-check"></i></span>
+                                        <input type="text" class="form-control" value="{% if current_user.registered_on %}{{ current_user.registered_on.strftime('%B %d, %Y') }}{% else %}Unknown{% endif %}" readonly>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-12">
+                            <div class="card mb-4">
+                                <div class="card-header bg-light">
+                                    <h5 class="mb-0">Account Overview</h5>
+                                </div>
+                                <div class="card-body">
+                                    <div class="row text-center">
+                                        <div class="col-md-4 mb-3 mb-md-0">
+                                            <div class="stat-item">
+                                                <h2 class="text-primary">{{ account_balance|format_currency }}</h2>
+                                                <p class="text-muted mb-0">Account Balance</p>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-4 mb-3 mb-md-0">
+                                            <div class="stat-item">
+                                                <h2 class="text-success">{{ total_salary|format_currency }}</h2>
+                                                <p class="text-muted mb-0">Total Salary</p>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <div class="stat-item">
+                                                <h2 class="text-info">{{ user_categories }}</h2>
+                                                <p class="text-muted mb-0">Your Categories</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-12">
+                            <div class="card mb-4">
+                                <div class="card-header bg-light">
+                                    <h5 class="mb-0">Transaction Statistics</h5>
+                                </div>
+                                <div class="card-body">
+                                    <div class="row text-center">
+                                        <div class="col-md-3 mb-3 mb-md-0">
+                                            <div class="stat-item">
+                                                <h2 class="text-primary">{{ total_transactions }}</h2>
+                                                <p class="text-muted mb-0">Total Transactions</p>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-3 mb-3 mb-md-0">
+                                            <div class="stat-item">
+                                                <h2 class="text-success">{{ total_credit|format_currency }}</h2>
+                                                <p class="text-muted mb-0">Total Credits</p>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-3 mb-3 mb-md-0">
+                                            <div class="stat-item">
+                                                <h2 class="text-danger">{{ total_debit|format_currency }}</h2>
+                                                <p class="text-muted mb-0">Total Debits</p>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <div class="stat-item">
+                                                <h2 class="text-warning">{{ avg_daily_spend|format_currency }}</h2>
+                                                <p class="text-muted mb-0">Avg. Daily Spend</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="text-center mt-3">
+                        <a href="{{ url_for('index') }}" class="btn btn-primary">
+                            <i class="bi bi-arrow-left me-1"></i>Back to Dashboard
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

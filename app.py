@@ -32,16 +32,16 @@ def login():
         return redirect(url_for('index'))
     
     if request.method == 'POST':
-        username = request.form['username']
+        email = request.form['email']
         password = request.form['password']
-        user = User.get_by_username(username)
+        user = User.get_by_email(email)
         
         if user and check_password_hash(user.password, password):
             login_user(user)
             next_page = request.args.get('next')
             return redirect(next_page or url_for('index'))
         else:
-            flash('Invalid username or password', 'danger')
+            flash('Invalid email or password', 'danger')
     
     return render_template('login.html')
 
@@ -52,6 +52,7 @@ def register():
     
     if request.method == 'POST':
         username = request.form['username']
+        email = request.form['email']
         password = request.form['password']
         confirm_password = request.form['confirm_password']
         
@@ -62,14 +63,82 @@ def register():
         if User.get_by_username(username):
             flash('Username already exists', 'danger')
             return redirect(url_for('register'))
+            
+        if User.get_by_email(email):
+            flash('Email already registered', 'danger')
+            return redirect(url_for('register'))
         
         hashed_password = generate_password_hash(password)
-        User.create(username, hashed_password)
+        User.create(username, email, hashed_password)
         
         flash('Registration successful! Please login.', 'success')
         return redirect(url_for('login'))
     
     return render_template('register.html')
+
+@app.route('/profile')
+@login_required
+def profile():
+    try:
+        # Get all expenses for the user
+        expenses = Expense.get_by_user(current_user.id)
+        
+        # Get all salaries for the user
+        salaries = Salary.get_by_user(current_user.id)
+        
+        # Calculate totals with safe defaults
+        total_transactions = len(expenses) if expenses else 0
+        total_credit = sum(expense.amount for expense in expenses if expense.transaction_type == 'CR') if expenses else 0
+        total_debit = sum(expense.amount for expense in expenses if expense.transaction_type == 'DR') if expenses else 0
+        total_salary = sum(salary.amount for salary in salaries) if salaries else 0
+        
+        # Get count of user's own categories (excluding global ones)
+        user_categories = Category.count_user_categories(current_user.id)
+        
+        # Calculate account balance
+        account_balance = total_credit - total_debit + total_salary
+        
+        # Get current month's transactions
+        current_date = datetime.now()
+        current_month = current_date.strftime('%Y-%m')
+        
+        current_month_expenses = [
+            expense for expense in expenses 
+            if expense.date.strftime('%Y-%m') == current_month
+        ] if expenses else []
+        
+        current_month_debits = sum(
+            expense.amount for expense in current_month_expenses 
+            if expense.transaction_type == 'DR'
+        ) if current_month_expenses else 0
+        
+        # Calculate days passed in current month
+        days_in_month = current_date.day
+        
+        # Calculate average daily spend for current month
+        avg_daily_spend = current_month_debits / days_in_month if days_in_month > 0 else 0
+        
+        return render_template('profile.html', 
+                              total_transactions=total_transactions,
+                              total_credit=total_credit,
+                              total_debit=total_debit,
+                              total_salary=total_salary,
+                              user_categories=user_categories,
+                              account_balance=account_balance,
+                              current_month_debits=current_month_debits,
+                              avg_daily_spend=avg_daily_spend)
+    except Exception as e:
+        # Log the error and return a simple profile page with minimal data
+        print(f"Error in profile route: {str(e)}")
+        return render_template('profile.html',
+                              total_transactions=0,
+                              total_credit=0,
+                              total_debit=0,
+                              total_salary=0,
+                              user_categories=0,
+                              account_balance=0,
+                              current_month_debits=0,
+                              avg_daily_spend=0)
 
 @app.route('/logout')
 @login_required
@@ -451,5 +520,24 @@ def view_transactions():
     
     return render_template('transactions.html', expenses=expenses, categories=categories)
 
+# Import migration functions
+from migrate_users import migrate_users_to_add_email, migrate_users_to_add_registration_date
+
+# Run migrations for existing users
+def migrate_users():
+    """Add missing fields to existing users."""
+    try:
+        # Add email field to users who don't have it
+        migrate_users_to_add_email()
+        
+        # Add registration date to users who don't have it
+        migrate_users_to_add_registration_date()
+        
+        print("User migrations completed successfully")
+    except Exception as e:
+        print(f"Error during user migrations: {str(e)}")
+
 if __name__ == '__main__':
-    app.run(debug=True) 
+    # Run migrations
+    migrate_users()
+    app.run(debug=True)

@@ -15,8 +15,10 @@ db = client.money_tracker
 class User(UserMixin):
     def __init__(self, user_data):
         self.id = str(user_data['_id'])
-        self.username = user_data['username']
+        self.username = user_data.get('username', '')
+        self.email = user_data.get('email', '')
         self.password = user_data['password']
+        self.registered_on = user_data.get('registered_on', None)
 
     @staticmethod
     def get(user_id):
@@ -26,6 +28,11 @@ class User(UserMixin):
     @staticmethod
     def get_by_username(username):
         user_data = db.users.find_one({'username': username})
+        return User(user_data) if user_data else None
+        
+    @staticmethod
+    def get_by_email(email):
+        user_data = db.users.find_one({'email': email})
         return User(user_data) if user_data else None
 
     @staticmethod
@@ -43,10 +50,12 @@ class User(UserMixin):
             Category.create(category_name, user_id, is_global=True)
 
     @staticmethod
-    def create(username, password):
+    def create(username, email, password):
         user_data = {
             'username': username,
-            'password': password
+            'email': email,
+            'password': password,
+            'registered_on': datetime.now()
         }
         result = db.users.insert_one(user_data)
         user_data['_id'] = result.inserted_id
@@ -229,3 +238,10 @@ class Category:
             {'is_global': {'$exists': False}},
             {'$set': {'is_global': False}}
         )
+        
+    @staticmethod
+    def count_user_categories(user_id):
+        """Count only the categories created by this user (not global ones)"""
+        if isinstance(user_id, str):
+            user_id = ObjectId(user_id)
+        return db.categories.count_documents({'user_id': user_id, 'is_global': {'$ne': True}})
