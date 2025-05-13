@@ -80,7 +80,7 @@ Money Tracker requires the following environment variables:
 | `FLASK_APP`   | The main application file                | `app.py`                                                            |
 | `FLASK_ENV`   | The environment (development/production) | `production`                                                        |
 | `SECRET_KEY`  | Secret key for session encryption        | `your-secure-random-string`                                         |
-| `MONGODB_URI` | MongoDB connection string                | `mongodb+srv://username:password@cluster.mongodb.net/money_tracker` |
+| `MONGODB_URI` | MongoDB connection string                | `mongodb+srv://<username>:<password>@cluster.mongodb.net/<table_name>` |
 
 ### Generating a Secure Secret Key
 
