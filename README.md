@@ -2,6 +2,8 @@
 
 A Flask-based web application for tracking personal finances, expenses, and income. Built with MongoDB for data storage.
 
+📚 **[Check out our comprehensive Wiki](wiki/index.md)** for detailed documentation, guides, and FAQs.
+
 ## Features
 
 - **User Authentication**
