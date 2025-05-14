@@ -3,14 +3,35 @@
 
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="description" content="Track your expenses and income with Money Tracker, a simple and intuitive financial management app">
+  <meta name="theme-color" content="#4a6bff">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <title>Money Tracker</title>
+  
+  <!-- PWA manifest -->
+  <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
+  
+  <!-- Favicon and app icons -->
+  <link rel="icon" type="image/png" sizes="32x32" href="{{ url_for('static', filename='images/icons/icon-72x72.png') }}">
+  <link rel="apple-touch-icon" href="{{ url_for('static', filename='images/icons/icon-192x192.png') }}">
+  
+  <!-- Apple splash screens -->
+  <link rel="apple-touch-startup-image" href="{{ url_for('static', filename='images/icons/icon-512x512.png') }}">
+  
+  <!-- Stylesheets -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  
+  <!-- Preload critical resources -->
+  <link rel="preload" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js" as="script">
+  <link rel="preload" href="{{ url_for('static', filename='js/app.js') }}" as="script">
 </head>
 
 <body>
+  <!-- Sticky navbar with improved mobile layout -->
   <nav class="navbar navbar-dark">
     <div class="container">
       <!-- Brand -->
@@ -21,36 +42,36 @@
       <div class="d-flex align-items-center">
         {% if current_user.is_authenticated %}
         <!-- Always visible profile and logout buttons -->
-        <div class="d-flex me-2">
-          <a href="{{ url_for('profile') }}" class="btn btn-outline-light btn-sm me-2">
-            <i class="bi bi-person-circle me-1"></i>Profile
+        <div class="d-none d-sm-flex me-2">
+          <a href="{{ url_for('profile') }}" class="btn btn-outline-light btn-sm me-2" aria-label="Profile">
+            <i class="bi bi-person-circle me-1"></i><span class="d-none d-md-inline">Profile</span>
           </a>
-          <a href="{{ url_for('logout') }}" class="btn btn-outline-light btn-sm">
-            <i class="bi bi-box-arrow-right me-1"></i>Logout
+          <a href="{{ url_for('logout') }}" class="btn btn-outline-light btn-sm" aria-label="Logout">
+            <i class="bi bi-box-arrow-right me-1"></i><span class="d-none d-md-inline">Logout</span>
           </a>
         </div>
         {% else %}
         <!-- Always visible login and register buttons for non-authenticated users -->
-        <div class="d-flex me-2">
-          <a href="{{ url_for('login') }}" class="btn btn-outline-light btn-sm me-2">
-            <i class="bi bi-box-arrow-in-right me-1"></i>Login
+        <div class="d-none d-sm-flex me-2">
+          <a href="{{ url_for('login') }}" class="btn btn-outline-light btn-sm me-2" aria-label="Login">
+            <i class="bi bi-box-arrow-in-right me-1"></i><span class="d-none d-md-inline">Login</span>
           </a>
-          <a href="{{ url_for('register') }}" class="btn btn-outline-light btn-sm">
-            <i class="bi bi-person-plus me-1"></i>Register
+          <a href="{{ url_for('register') }}" class="btn btn-outline-light btn-sm" aria-label="Register">
+            <i class="bi bi-person-plus me-1"></i><span class="d-none d-md-inline">Register</span>
           </a>
         </div>
         {% endif %}
         
-        <!-- Hamburger button -->
-        <button class="navbar-toggler" type="button" data-bs-toggle="offcanvas" data-bs-target="#offcanvasNavbar">
+        <!-- Hamburger button - larger touch target -->
+        <button class="navbar-toggler" type="button" data-bs-toggle="offcanvas" data-bs-target="#offcanvasNavbar" aria-label="Menu">
           <span class="navbar-toggler-icon"></span>
         </button>
       </div>
       
       <!-- Offcanvas sidebar for menu items -->
-      <div class="offcanvas offcanvas-end bg-dark text-white" tabindex="-1" id="offcanvasNavbar">
+      <div class="offcanvas offcanvas-end bg-dark text-white" tabindex="-1" id="offcanvasNavbar" aria-labelledby="offcanvasNavbarLabel">
         <div class="offcanvas-header">
-          <h5 class="offcanvas-title">
+          <h5 class="offcanvas-title" id="offcanvasNavbarLabel">
             {% if current_user.is_authenticated %}
             <i class="bi bi-person-check me-1"></i>Welcome, {{ current_user.username }}
             {% else %}
@@ -64,68 +85,101 @@
             {% if current_user.is_authenticated %}
             <li class="nav-item">
               <a class="nav-link" href="{{ url_for('index') }}">
-                <i class="bi bi-speedometer2 me-1"></i>Dashboard
+                <i class="bi bi-speedometer2 me-2"></i>Dashboard
               </a>
             </li>
             <li class="nav-item">
               <a class="nav-link" href="{{ url_for('view_transactions') }}">
-                <i class="bi bi-list-ul me-1"></i>All Transactions
+                <i class="bi bi-list-ul me-2"></i>All Transactions
               </a>
             </li>
             <li class="nav-item">
               <a class="nav-link" href="{{ url_for('add_expense') }}">
-                <i class="bi bi-cash-stack me-1"></i>Add Expense
+                <i class="bi bi-cash-stack me-2"></i>Add Expense
               </a>
             </li>
             <li class="nav-item">
               <a class="nav-link" href="{{ url_for('add_salary') }}">
-                <i class="bi bi-bank me-1"></i>Add Salary
+                <i class="bi bi-bank me-2"></i>Add Salary
               </a>
             </li>
             <li class="nav-item">
               <a class="nav-link" href="{{ url_for('salary_visualization') }}">
-                <i class="bi bi-graph-up me-1"></i>Salary Overview
+                <i class="bi bi-graph-up me-2"></i>Salary Overview
               </a>
             </li>
             <li class="nav-item">
               <a class="nav-link" href="{{ url_for('manage_categories') }}">
-                <i class="bi bi-tags me-1"></i>Categories
+                <i class="bi bi-tags me-2"></i>Categories
               </a>
             </li>
             <li class="nav-item">
               <a class="nav-link" href="{{ url_for('manage_budgets') }}">
-                <i class="bi bi-wallet2 me-1"></i>Budgets
+                <i class="bi bi-wallet2 me-2"></i>Budgets
               </a>
             </li>
             <li class="nav-item">
               <a class="nav-link" href="{{ url_for('budget_overview') }}">
-                <i class="bi bi-pie-chart me-1"></i>Budget Overview
+                <i class="bi bi-pie-chart me-2"></i>Budget Overview
               </a>
             </li>
             <li class="nav-item">
               <a class="nav-link" href="{{ url_for('recurring_transactions') }}">
-                <i class="bi bi-arrow-repeat me-1"></i>Recurring Transactions
+                <i class="bi bi-arrow-repeat me-2"></i>Recurring Transactions
               </a>
             </li>
             <li class="nav-item">
               <a class="nav-link" href="{{ url_for('reports_dashboard') }}">
-                <i class="bi bi-file-earmark-bar-graph me-1"></i>Reports & Analytics
+                <i class="bi bi-file-earmark-bar-graph me-2"></i>Reports & Analytics
+              </a>
+            </li>
+            
+            <!-- Mobile-only profile and logout options -->
+            <li class="nav-item d-sm-none mt-3">
+              <a class="nav-link" href="{{ url_for('profile') }}">
+                <i class="bi bi-person-circle me-2"></i>Profile
+              </a>
+            </li>
+            <li class="nav-item d-sm-none">
+              <a class="nav-link" href="{{ url_for('logout') }}">
+                <i class="bi bi-box-arrow-right me-2"></i>Logout
               </a>
             </li>
             {% else %}
             <li class="nav-item">
               <a class="nav-link" href="{{ url_for('home') }}">
-                <i class="bi bi-house me-1"></i>Home
+                <i class="bi bi-house me-2"></i>Home
+              </a>
+            </li>
+            
+            <!-- Mobile-only login and register options -->
+            <li class="nav-item d-sm-none mt-3">
+              <a class="nav-link" href="{{ url_for('login') }}">
+                <i class="bi bi-box-arrow-in-right me-2"></i>Login
+              </a>
+            </li>
+            <li class="nav-item d-sm-none">
+              <a class="nav-link" href="{{ url_for('register') }}">
+                <i class="bi bi-person-plus me-2"></i>Register
               </a>
             </li>
             {% endif %}
           </ul>
+          
+          <!-- Add to Home Screen button for PWA -->
+          <div class="mt-4">
+            <button id="add-to-home" class="btn btn-outline-light w-100" style="display: none;">
+              <i class="bi bi-download me-2"></i>Add to Home Screen
+            </button>
+          </div>
         </div>
       </div>
     </div>
   </nav>
 
+  <!-- Main content container -->
   <div class="container mt-4">
+    <!-- Flash messages -->
     {% with messages = get_flashed_messages(with_categories=true) %}
     {% if messages %}
     {% for category, message in messages %}
@@ -137,10 +191,66 @@
     {% endif %}
     {% endwith %}
 
+    <!-- Page content -->
     {% block content %}{% endblock %}
   </div>
+  
+  <!-- Offline indicator (hidden by default) -->
+  <div id="offline-indicator" class="offline-indicator" style="display: none;">
+    <i class="bi bi-wifi-off"></i>
+    <span>You are offline</span>
+  </div>
+  
+  <!-- Add to Home banner (hidden by default) -->
+  <div id="add-to-home-banner" class="add-to-home-banner">
+    <div>
+      <strong>Add Money Tracker to your home screen</strong>
+      <p class="mb-0 text-muted">For a better experience and offline access</p>
+    </div>
+    <div class="d-flex align-items-center">
+      <button id="add-to-home-banner-btn" class="btn btn-primary me-2">Add</button>
+      <button type="button" class="btn-close" id="close-add-to-home-banner"></button>
+    </div>
+  </div>
 
+  <!-- Scripts -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/touch-gestures.js') }}"></script>
+  
+  <!-- Offline detection -->
+  <script>
+    // Show/hide offline indicator
+    function updateOnlineStatus() {
+      const indicator = document.getElementById('offline-indicator');
+      if (navigator.onLine) {
+        indicator.style.display = 'none';
+      } else {
+        indicator.style.display = 'flex';
+      }
+    }
+    
+    window.addEventListener('online', updateOnlineStatus);
+    window.addEventListener('offline', updateOnlineStatus);
+    updateOnlineStatus(); // Initial check
+    
+    // Close Add to Home banner
+    document.getElementById('close-add-to-home-banner').addEventListener('click', function() {
+      document.getElementById('add-to-home-banner').style.display = 'none';
+      localStorage.setItem('pwa-banner-dismissed', 'true');
+    });
+    
+    // Only show banner if not already dismissed and not on iOS (which has its own mechanism)
+    if (!localStorage.getItem('pwa-banner-dismissed') && !navigator.standalone && !(/iPad|iPhone|iPod/.test(navigator.userAgent))) {
+      // Show banner after 5 seconds
+      setTimeout(() => {
+        document.getElementById('add-to-home-banner').style.display = 'flex';
+      }, 5000);
+    }
+  </script>
+  
+  <!-- Additional page-specific scripts -->
+  {% block scripts %}{% endblock %}
 </body>
 
 </html>

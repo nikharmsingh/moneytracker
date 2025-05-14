@@ -934,6 +934,16 @@ def home():
         return redirect(url_for('index'))
     return render_template('home.html')
 
+@app.route('/offline')
+def offline():
+    """Serve the offline page when the user is offline."""
+    return render_template('offline.html')
+
+@app.route('/service-worker.js')
+def service_worker():
+    """Serve the service worker at the root path for proper scope."""
+    return app.send_static_file('js/service-worker.js')
+
 @app.route('/dashboard')
 @login_required
 def index():
