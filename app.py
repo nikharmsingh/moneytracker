@@ -157,7 +157,11 @@ def load_user(user_id):
 @app.route('/login', methods=['GET', 'POST'])
 @limiter.limit("10 per minute")
 def login():
-    if current_user.is_authenticated:
+    # Check if this is a redirect from logout
+    from_logout = request.args.get('from_logout', False)
+    
+    # Only redirect if authenticated and not coming from logout
+    if current_user.is_authenticated and not from_logout:
         return redirect(url_for('index'))
     
     # Check if user is in 2FA verification process
@@ -580,7 +584,7 @@ def logout():
     session_id = session.get('session_id')
     
     # Remove the session from the user's active sessions
-    if session_id:
+    if session_id and current_user:
         current_user.remove_session(session_id)
     
     # Log the user out
@@ -589,8 +593,14 @@ def logout():
     # Clear the session
     session.clear()
     
+    # Set cache control headers to prevent caching
+    response = make_response(redirect(url_for('login', from_logout=True)))
+    response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
+    response.headers['Pragma'] = 'no-cache'
+    response.headers['Expires'] = '0'
+    
     flash('You have been logged out successfully', 'success')
-    return redirect(url_for('login'))
+    return response
 
 # Security Routes
 @app.route('/security', methods=['GET'])

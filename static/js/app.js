@@ -104,4 +104,42 @@ document.addEventListener('DOMContentLoaded', () => {
   popoverTriggerList.map(function (popoverTriggerEl) {
     return new bootstrap.Popover(popoverTriggerEl);
   });
+  
+  // Handle logout links to ensure proper redirection
+  const logoutLinks = document.querySelectorAll('.logout-link');
+  logoutLinks.forEach(link => {
+    link.addEventListener('click', function(e) {
+      e.preventDefault();
+      
+      // Clear any cached data
+      if (caches && caches.keys) {
+        caches.keys().then(cacheNames => {
+          cacheNames.forEach(cacheName => {
+            caches.delete(cacheName);
+          });
+        });
+      }
+      
+      // Clear localStorage items if needed
+      localStorage.removeItem('pendingTransactions');
+      
+      // Force a hard logout by making a fetch request first
+      fetch('/logout', {
+        method: 'GET',
+        credentials: 'same-origin',
+        cache: 'no-store',
+        headers: {
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Pragma': 'no-cache',
+          'Expires': '0'
+        }
+      }).then(() => {
+        // Then redirect to login page with cache-busting parameter
+        window.location.href = '/login?from_logout=true&t=' + new Date().getTime();
+      }).catch(() => {
+        // Fallback if fetch fails
+        window.location.href = '/login?from_logout=true&t=' + new Date().getTime();
+      });
+    });
+  });
 });

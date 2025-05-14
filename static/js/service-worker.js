@@ -48,6 +48,15 @@ self.addEventListener('activate', event => {
 
 // Fetch event - serve from cache or network
 self.addEventListener('fetch', event => {
+  // Skip caching for authentication-related routes
+  const url = new URL(event.request.url);
+  const authPaths = ['/login', '/logout', '/register', '/reset_password'];
+  
+  // Always fetch from network for auth routes
+  if (authPaths.some(path => url.pathname.includes(path))) {
+    return event.respondWith(fetch(event.request));
+  }
+  
   event.respondWith(
     caches.match(event.request)
       .then(response => {

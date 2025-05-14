@@ -46,7 +46,7 @@
           <a href="{{ url_for('profile') }}" class="btn btn-outline-light btn-sm me-2" aria-label="Profile">
             <i class="bi bi-person-circle me-1"></i><span class="d-none d-md-inline">Profile</span>
           </a>
-          <a href="{{ url_for('logout') }}" class="btn btn-outline-light btn-sm" aria-label="Logout">
+          <a href="{{ url_for('logout') }}" class="btn btn-outline-light btn-sm logout-link" aria-label="Logout">
             <i class="bi bi-box-arrow-right me-1"></i><span class="d-none d-md-inline">Logout</span>
           </a>
         </div>
@@ -146,7 +146,7 @@
               </a>
             </li>
             <li class="nav-item d-sm-none">
-              <a class="nav-link" href="{{ url_for('logout') }}">
+              <a class="nav-link logout-link" href="{{ url_for('logout') }}">
                 <i class="bi bi-box-arrow-right me-2"></i>Logout
               </a>
             </li>
