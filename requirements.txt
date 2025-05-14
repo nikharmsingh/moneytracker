@@ -20,9 +20,3 @@ cryptography>=42.0.0
 
 # Deployment
 gunicorn==21.2.0
-
-# Date and time handling
-pytz==2023.3
-
-# Other utilities
-warnings-formatter==0.3.0
