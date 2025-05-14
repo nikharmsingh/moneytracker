@@ -1,0 +1,144 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container">
+  <div class="row mb-4">
+    <div class="col-md-8">
+      <h1 class="mb-3">
+        <i class="bi bi-graph-up me-2"></i>Financial Reports
+      </h1>
+      <p class="text-muted">Gain insights into your financial data with detailed reports and analytics.</p>
+    </div>
+  </div>
+
+  <div class="row row-cols-1 row-cols-md-2 g-4 mb-5">
+    <!-- Spending Analysis Report -->
+    <div class="col">
+      <div class="card h-100 shadow-sm">
+        <div class="card-body">
+          <div class="d-flex align-items-center mb-3">
+            <div class="icon-box bg-primary-subtle rounded-circle p-3 me-3">
+              <i class="bi bi-pie-chart text-primary fs-4"></i>
+            </div>
+            <h5 class="card-title mb-0">Spending Analysis</h5>
+          </div>
+          <p class="card-text">Analyze your spending patterns by category over different time periods.</p>
+          <ul class="list-unstyled mb-4">
+            <li><i class="bi bi-check-circle-fill text-success me-2"></i>Category breakdown</li>
+            <li><i class="bi bi-check-circle-fill text-success me-2"></i>Monthly, quarterly, yearly views</li>
+            <li><i class="bi bi-check-circle-fill text-success me-2"></i>Interactive charts</li>
+          </ul>
+          <a href="{{ url_for('spending_analysis') }}" class="btn btn-outline-primary">View Report</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Income vs Expense Report -->
+    <div class="col">
+      <div class="card h-100 shadow-sm">
+        <div class="card-body">
+          <div class="d-flex align-items-center mb-3">
+            <div class="icon-box bg-success-subtle rounded-circle p-3 me-3">
+              <i class="bi bi-bar-chart text-success fs-4"></i>
+            </div>
+            <h5 class="card-title mb-0">Income vs Expenses</h5>
+          </div>
+          <p class="card-text">Compare your income and expenses to track your savings rate over time.</p>
+          <ul class="list-unstyled mb-4">
+            <li><i class="bi bi-check-circle-fill text-success me-2"></i>Income and expense trends</li>
+            <li><i class="bi bi-check-circle-fill text-success me-2"></i>Savings rate calculation</li>
+            <li><i class="bi bi-check-circle-fill text-success me-2"></i>Monthly, quarterly, yearly comparisons</li>
+          </ul>
+          <a href="{{ url_for('income_expense_report') }}" class="btn btn-outline-success">View Report</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Spending Trends Report -->
+    <div class="col">
+      <div class="card h-100 shadow-sm">
+        <div class="card-body">
+          <div class="d-flex align-items-center mb-3">
+            <div class="icon-box bg-info-subtle rounded-circle p-3 me-3">
+              <i class="bi bi-graph-up-arrow text-info fs-4"></i>
+            </div>
+            <h5 class="card-title mb-0">Spending Trends</h5>
+          </div>
+          <p class="card-text">Track how your spending has changed over time with trend analysis.</p>
+          <ul class="list-unstyled mb-4">
+            <li><i class="bi bi-check-circle-fill text-success me-2"></i>Month-over-month changes</li>
+            <li><i class="bi bi-check-circle-fill text-success me-2"></i>Category-specific trends</li>
+            <li><i class="bi bi-check-circle-fill text-success me-2"></i>Spending pattern detection</li>
+          </ul>
+          <a href="{{ url_for('spending_trends') }}" class="btn btn-outline-info">View Report</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Budget Analysis Report -->
+    <div class="col">
+      <div class="card h-100 shadow-sm">
+        <div class="card-body">
+          <div class="d-flex align-items-center mb-3">
+            <div class="icon-box bg-warning-subtle rounded-circle p-3 me-3">
+              <i class="bi bi-wallet2 text-warning fs-4"></i>
+            </div>
+            <h5 class="card-title mb-0">Budget Analysis</h5>
+          </div>
+          <p class="card-text">Evaluate your budget performance and track your progress over time.</p>
+          <ul class="list-unstyled mb-4">
+            <li><i class="bi bi-check-circle-fill text-success me-2"></i>Budget vs actual spending</li>
+            <li><i class="bi bi-check-circle-fill text-success me-2"></i>Historical budget performance</li>
+            <li><i class="bi bi-check-circle-fill text-success me-2"></i>Category-specific budget analysis</li>
+          </ul>
+          <a href="{{ url_for('budget_analysis') }}" class="btn btn-outline-warning">View Report</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Report Tips -->
+  <div class="card shadow-sm mb-4">
+    <div class="card-header bg-white">
+      <h5 class="mb-0">Tips for Using Reports</h5>
+    </div>
+    <div class="card-body">
+      <div class="row">
+        <div class="col-md-4">
+          <div class="d-flex mb-3">
+            <div class="me-3">
+              <i class="bi bi-calendar-check text-primary" style="font-size: 2rem;"></i>
+            </div>
+            <div>
+              <h6>Regular Review</h6>
+              <p class="text-muted small mb-0">Check your reports monthly to stay on top of your financial situation and identify trends early.</p>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="d-flex mb-3">
+            <div class="me-3">
+              <i class="bi bi-sliders text-primary" style="font-size: 2rem;"></i>
+            </div>
+            <div>
+              <h6>Customize Your View</h6>
+              <p class="text-muted small mb-0">Use the filters in each report to focus on specific time periods or categories that matter to you.</p>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="d-flex mb-3">
+            <div class="me-3">
+              <i class="bi bi-lightbulb text-primary" style="font-size: 2rem;"></i>
+            </div>
+            <div>
+              <h6>Act on Insights</h6>
+              <p class="text-muted small mb-0">Use the insights from these reports to adjust your spending habits and improve your financial health.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

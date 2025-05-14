@@ -92,6 +92,26 @@
                 <i class="bi bi-tags me-1"></i>Categories
               </a>
             </li>
+            <li class="nav-item">
+              <a class="nav-link" href="{{ url_for('manage_budgets') }}">
+                <i class="bi bi-wallet2 me-1"></i>Budgets
+              </a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="{{ url_for('budget_overview') }}">
+                <i class="bi bi-pie-chart me-1"></i>Budget Overview
+              </a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="{{ url_for('recurring_transactions') }}">
+                <i class="bi bi-arrow-repeat me-1"></i>Recurring Transactions
+              </a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="{{ url_for('reports_dashboard') }}">
+                <i class="bi bi-file-earmark-bar-graph me-1"></i>Reports & Analytics
+              </a>
+            </li>
             {% else %}
             <li class="nav-item">
               <a class="nav-link" href="{{ url_for('home') }}">

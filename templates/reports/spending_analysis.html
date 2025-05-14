@@ -1,0 +1,344 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container">
+  <div class="row mb-4">
+    <div class="col-md-8">
+      <h1 class="mb-3">
+        <i class="bi bi-pie-chart me-2"></i>Spending Analysis
+      </h1>
+      <p class="text-muted">Analyze your spending patterns by category over different time periods.</p>
+    </div>
+    <div class="col-md-4 text-md-end d-flex align-items-center justify-content-md-end">
+      <a href="{{ url_for('reports_dashboard') }}" class="btn btn-outline-secondary">
+        <i class="bi bi-arrow-left me-1"></i>Back to Reports
+      </a>
+    </div>
+  </div>
+
+  <!-- Filters -->
+  <div class="card shadow-sm mb-4">
+    <div class="card-body">
+      <form id="filterForm" class="row g-3 align-items-end">
+        <div class="col-md-4">
+          <label for="year" class="form-label">Year</label>
+          <select id="year" name="year" class="form-select">
+            {% for year in all_years %}
+            <option value="{{ year }}" {% if year == selected_year %}selected{% endif %}>{{ year }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="col-md-4">
+          <label for="period_type" class="form-label">Period Type</label>
+          <select id="period_type" name="period_type" class="form-select">
+            <option value="monthly" {% if period_type == 'monthly' %}selected{% endif %}>Monthly</option>
+            <option value="quarterly" {% if period_type == 'quarterly' %}selected{% endif %}>Quarterly</option>
+            <option value="yearly" {% if period_type == 'yearly' %}selected{% endif %}>Yearly</option>
+          </select>
+        </div>
+        <div class="col-md-4">
+          <button type="submit" class="btn btn-primary w-100">Apply Filters</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Main Chart -->
+  <div class="card shadow-sm mb-4">
+    <div class="card-header bg-white d-flex justify-content-between align-items-center">
+      <h5 class="mb-0">Spending by Category</h5>
+      <div class="btn-group btn-group-sm" role="group">
+        <button type="button" class="btn btn-outline-primary active" id="viewBar">Bar</button>
+        <button type="button" class="btn btn-outline-primary" id="viewLine">Line</button>
+        <button type="button" class="btn btn-outline-primary" id="viewStacked">Stacked</button>
+      </div>
+    </div>
+    <div class="card-body">
+      <canvas id="spendingChart" height="300"></canvas>
+    </div>
+  </div>
+
+  <!-- Total Spending Summary -->
+  <div class="card shadow-sm mb-4">
+    <div class="card-header bg-white">
+      <h5 class="mb-0">Total Spending Summary</h5>
+    </div>
+    <div class="card-body">
+      <div class="table-responsive">
+        <table class="table table-hover">
+          <thead>
+            <tr>
+              <th>Period</th>
+              {% for label in period_labels %}
+              <th class="text-end">{{ label }}</th>
+              {% endfor %}
+              <th class="text-end">Total</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>Total Spending</strong></td>
+              {% for amount in total_spending %}
+              <td class="text-end">₹{{ amount|format_currency }}</td>
+              {% endfor %}
+              <td class="text-end"><strong>₹{{ total_spending|sum|format_currency }}</strong></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Category Breakdown -->
+  <div class="card shadow-sm mb-4">
+    <div class="card-header bg-white">
+      <h5 class="mb-0">Category Breakdown</h5>
+    </div>
+    <div class="card-body">
+      <div class="row">
+        <div class="col-md-6">
+          <canvas id="pieChart" height="300"></canvas>
+        </div>
+        <div class="col-md-6">
+          <div class="table-responsive">
+            <table class="table table-hover">
+              <thead>
+                <tr>
+                  <th>Category</th>
+                  <th class="text-end">Total</th>
+                  <th class="text-end">Percentage</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% set total = total_spending|sum %}
+                {% for dataset in chart_data.datasets %}
+                {% set category_total = dataset.data|sum %}
+                <tr>
+                  <td>
+                    <span class="color-dot" style="background-color: {{ dataset.backgroundColor }};"></span>
+                    {{ dataset.label }}
+                  </td>
+                  <td class="text-end">₹{{ category_total|format_currency }}</td>
+                  <td class="text-end">{{ (category_total / total * 100)|round(1) if total > 0 else 0 }}%</td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Insights -->
+  <div class="card shadow-sm mb-4">
+    <div class="card-header bg-white">
+      <h5 class="mb-0">Spending Insights</h5>
+    </div>
+    <div class="card-body">
+      <div class="row">
+        <div class="col-md-4">
+          <div class="card border-0 bg-light mb-3">
+            <div class="card-body">
+              <h6 class="card-title">Highest Spending Category</h6>
+              {% set highest_category = {'name': 'None', 'total': 0} %}
+              {% for dataset in chart_data.datasets %}
+                {% set category_total = dataset.data|sum %}
+                {% if category_total > highest_category.total %}
+                  {% set _ = highest_category.update({'name': dataset.label, 'total': category_total}) %}
+                {% endif %}
+              {% endfor %}
+              <p class="display-6 mb-0">{{ highest_category.name }}</p>
+              <p class="text-muted">₹{{ highest_category.total|format_currency }}</p>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="card border-0 bg-light mb-3">
+            <div class="card-body">
+              <h6 class="card-title">Average Monthly Spending</h6>
+              {% if period_type == 'monthly' %}
+                {% set avg = (total_spending|sum / total_spending|length) if total_spending|length > 0 else 0 %}
+                <p class="display-6 mb-0">₹{{ avg|format_currency }}</p>
+                <p class="text-muted">Per month</p>
+              {% elif period_type == 'quarterly' %}
+                {% set avg = (total_spending|sum / (total_spending|length * 3)) if total_spending|length > 0 else 0 %}
+                <p class="display-6 mb-0">₹{{ avg|format_currency }}</p>
+                <p class="text-muted">Per month (quarterly average)</p>
+              {% else %}
+                {% set avg = (total_spending|sum / 12) if total_spending|sum > 0 else 0 %}
+                <p class="display-6 mb-0">₹{{ avg|format_currency }}</p>
+                <p class="text-muted">Per month (yearly average)</p>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="card border-0 bg-light mb-3">
+            <div class="card-body">
+              <h6 class="card-title">Highest Spending Period</h6>
+              {% set highest_period = {'index': 0, 'amount': 0} %}
+              {% for amount in total_spending %}
+                {% if amount > highest_period.amount %}
+                  {% set _ = highest_period.update({'index': loop.index0, 'amount': amount}) %}
+                {% endif %}
+              {% endfor %}
+              <p class="display-6 mb-0">{{ period_labels[highest_period.index] }}</p>
+              <p class="text-muted">₹{{ highest_period.amount|format_currency }}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+  .color-dot {
+    display: inline-block;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    margin-right: 8px;
+  }
+</style>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+  // Chart data from Flask
+  const chartData = {{ chart_data|tojson }};
+  const totalSpending = {{ total_spending|tojson }};
+  
+  // Create main chart
+  const ctx = document.getElementById('spendingChart').getContext('2d');
+  let mainChart = new Chart(ctx, {
+    type: 'bar',
+    data: chartData,
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      scales: {
+        x: {
+          stacked: false
+        },
+        y: {
+          stacked: false,
+          beginAtZero: true
+        }
+      }
+    }
+  });
+  
+  // Create pie chart for category breakdown
+  const pieCtx = document.getElementById('pieChart').getContext('2d');
+  const categoryTotals = chartData.datasets.map(dataset => {
+    return {
+      label: dataset.label,
+      total: dataset.data.reduce((a, b) => a + b, 0),
+      color: dataset.backgroundColor
+    };
+  });
+  
+  const pieChart = new Chart(pieCtx, {
+    type: 'pie',
+    data: {
+      labels: categoryTotals.map(cat => cat.label),
+      datasets: [{
+        data: categoryTotals.map(cat => cat.total),
+        backgroundColor: categoryTotals.map(cat => cat.color),
+        borderWidth: 1
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: {
+          position: 'right'
+        }
+      }
+    }
+  });
+  
+  // Chart view toggle handlers
+  document.getElementById('viewBar').addEventListener('click', function() {
+    mainChart.destroy();
+    mainChart = new Chart(ctx, {
+      type: 'bar',
+      data: chartData,
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+          x: {
+            stacked: false
+          },
+          y: {
+            stacked: false,
+            beginAtZero: true
+          }
+        }
+      }
+    });
+    
+    // Update active button
+    document.querySelectorAll('.btn-group .btn').forEach(btn => btn.classList.remove('active'));
+    this.classList.add('active');
+  });
+  
+  document.getElementById('viewLine').addEventListener('click', function() {
+    mainChart.destroy();
+    
+    // Convert to line chart data
+    const lineData = JSON.parse(JSON.stringify(chartData)); // Deep copy
+    lineData.datasets.forEach(dataset => {
+      dataset.fill = false;
+      dataset.tension = 0.4;
+    });
+    
+    mainChart = new Chart(ctx, {
+      type: 'line',
+      data: lineData,
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+          y: {
+            beginAtZero: true
+          }
+        }
+      }
+    });
+    
+    // Update active button
+    document.querySelectorAll('.btn-group .btn').forEach(btn => btn.classList.remove('active'));
+    this.classList.add('active');
+  });
+  
+  document.getElementById('viewStacked').addEventListener('click', function() {
+    mainChart.destroy();
+    mainChart = new Chart(ctx, {
+      type: 'bar',
+      data: chartData,
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+          x: {
+            stacked: true
+          },
+          y: {
+            stacked: true,
+            beginAtZero: true
+          }
+        }
+      }
+    });
+    
+    // Update active button
+    document.querySelectorAll('.btn-group .btn').forEach(btn => btn.classList.remove('active'));
+    this.classList.add('active');
+  });
+</script>
+{% endblock %}

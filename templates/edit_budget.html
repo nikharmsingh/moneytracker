@@ -1,0 +1,203 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container">
+  <div class="row justify-content-center">
+    <div class="col-md-8">
+      <div class="card shadow-sm">
+        <div class="card-header bg-white">
+          <h3 class="mb-0">
+            <i class="bi bi-pencil-square me-2"></i>Edit Budget
+          </h3>
+        </div>
+        <div class="card-body">
+          <form method="POST" class="needs-validation" novalidate>
+            <div class="row mb-3">
+              <div class="col-md-6">
+                <label for="name" class="form-label">Budget Name</label>
+                <input type="text" class="form-control" id="name" name="name" value="{{ budget.name }}" placeholder="e.g., Monthly Groceries">
+                <div class="form-text">Give your budget a descriptive name (optional)</div>
+              </div>
+              <div class="col-md-6">
+                <label for="amount" class="form-label">Budget Amount (₹)</label>
+                <input type="number" class="form-control" id="amount" name="amount" min="1" value="{{ budget.amount }}" required>
+                <div class="invalid-feedback">
+                  Please enter a valid amount.
+                </div>
+              </div>
+            </div>
+
+            <div class="row mb-3">
+              <div class="col-md-6">
+                <label for="category_id" class="form-label">Category</label>
+                <select class="form-select" id="category_id" name="category_id">
+                  <option value="">All Categories</option>
+                  {% for category in categories %}
+                  <option value="{{ category.id }}" {% if budget.category_id == category.id %}selected{% endif %}>{{ category.name }}</option>
+                  {% endfor %}
+                </select>
+                <div class="form-text">Leave empty to budget across all categories</div>
+              </div>
+              <div class="col-md-6">
+                <label for="period" class="form-label">Budget Period</label>
+                <select class="form-select" id="period" name="period" required>
+                  <option value="monthly" {% if budget.period == 'monthly' %}selected{% endif %}>Monthly</option>
+                  <option value="quarterly" {% if budget.period == 'quarterly' %}selected{% endif %}>Quarterly</option>
+                  <option value="yearly" {% if budget.period == 'yearly' %}selected{% endif %}>Yearly</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="row mb-3">
+              <div class="col-md-6">
+                <label for="start_date" class="form-label">Start Date</label>
+                <input type="date" class="form-control" id="start_date" name="start_date" value="{{ budget.start_date|format_date }}" required>
+                <div class="invalid-feedback">
+                  Please select a start date.
+                </div>
+              </div>
+              <div class="col-md-6">
+                <label for="end_date" class="form-label">End Date</label>
+                <input type="date" class="form-control" id="end_date" name="end_date" value="{{ budget.end_date|format_date }}" required>
+                <div class="invalid-feedback">
+                  Please select an end date.
+                </div>
+              </div>
+            </div>
+
+            <div class="row mb-3">
+              <div class="col-md-6">
+                <label for="notification_threshold" class="form-label">Notification Threshold (%)</label>
+                <input type="range" class="form-range" id="notification_threshold" name="notification_threshold" 
+                       min="50" max="100" value="{{ budget.notification_threshold }}" oninput="thresholdValue.innerText = this.value + '%'">
+                <div class="text-center">
+                  <span id="thresholdValue">{{ budget.notification_threshold }}%</span>
+                </div>
+                <div class="form-text">Get notified when you reach this percentage of your budget</div>
+              </div>
+              <div class="col-md-6">
+                <label for="color" class="form-label">Budget Color</label>
+                <input type="color" class="form-control form-control-color w-100" id="color" name="color" value="{{ budget.color }}">
+                <div class="form-text">Choose a color for your budget visualization</div>
+              </div>
+            </div>
+
+            <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+              <a href="{{ url_for('manage_budgets') }}" class="btn btn-outline-secondary">Cancel</a>
+              <a href="{{ url_for('deactivate_budget', budget_id=budget.id) }}" class="btn btn-outline-warning me-auto"
+                 onclick="return confirm('Are you sure you want to deactivate this budget?');">
+                <i class="bi bi-pause-circle me-1"></i>Deactivate
+              </a>
+              <button type="submit" class="btn btn-primary">
+                <i class="bi bi-save me-1"></i>Update Budget
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <!-- Current Budget Status -->
+      <div class="card shadow-sm mt-4">
+        <div class="card-header bg-white">
+          <h5 class="mb-0">Current Budget Status</h5>
+        </div>
+        <div class="card-body">
+          <div class="row">
+            <div class="col-md-6">
+              <div class="d-flex justify-content-between mb-1">
+                <span>Budget Amount:</span>
+                <span class="fw-bold">₹{{ budget.amount|format_currency }}</span>
+              </div>
+              <div class="d-flex justify-content-between mb-1">
+                <span>Spent So Far:</span>
+                <span class="fw-bold">₹{{ budget.get_spending()|format_currency }}</span>
+              </div>
+              <div class="d-flex justify-content-between mb-1">
+                <span>Remaining:</span>
+                <span class="fw-bold">₹{{ budget.get_remaining()|format_currency }}</span>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <h6 class="mb-2">Progress</h6>
+              <div class="progress mb-2" style="height: 20px;">
+                {% set percentage = budget.get_percentage_used() %}
+                {% if percentage >= 100 %}
+                <div class="progress-bar bg-danger" role="progressbar" style="width: 100%;" 
+                     aria-valuenow="{{ percentage }}" aria-valuemin="0" aria-valuemax="100">{{ percentage|format_percentage }}</div>
+                {% elif percentage >= budget.notification_threshold %}
+                <div class="progress-bar bg-warning" role="progressbar" style="width: {{ percentage }}%;" 
+                     aria-valuenow="{{ percentage }}" aria-valuemin="0" aria-valuemax="100">{{ percentage|format_percentage }}</div>
+                {% else %}
+                <div class="progress-bar" role="progressbar" style="width: {{ percentage }}%; background-color: {{ budget.color }};" 
+                     aria-valuenow="{{ percentage }}" aria-valuemin="0" aria-valuemax="100">{{ percentage|format_percentage }}</div>
+                {% endif %}
+              </div>
+              <div class="small text-muted">
+                {% if percentage >= 100 %}
+                <i class="bi bi-exclamation-triangle-fill text-danger me-1"></i>You've exceeded your budget!
+                {% elif percentage >= budget.notification_threshold %}
+                <i class="bi bi-exclamation-circle-fill text-warning me-1"></i>You're approaching your budget limit!
+                {% else %}
+                <i class="bi bi-check-circle-fill text-success me-1"></i>Your spending is within budget.
+                {% endif %}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  // Form validation
+  (function () {
+    'use strict'
+    var forms = document.querySelectorAll('.needs-validation')
+    Array.prototype.slice.call(forms)
+      .forEach(function (form) {
+        form.addEventListener('submit', function (event) {
+          if (!form.checkValidity()) {
+            event.preventDefault()
+            event.stopPropagation()
+          }
+          form.classList.add('was-validated')
+        }, false)
+      })
+  })()
+
+  // Update date range based on period selection
+  document.getElementById('period').addEventListener('change', function() {
+    const period = this.value;
+    const startDateInput = document.getElementById('start_date');
+    const endDateInput = document.getElementById('end_date');
+    
+    // Get the current start date or use today
+    let startDate = new Date(startDateInput.value);
+    if (isNaN(startDate.getTime())) {
+      startDate = new Date();
+      startDate.setDate(1); // First day of current month
+    }
+    
+    // Calculate end date based on period
+    let endDate = new Date(startDate);
+    if (period === 'monthly') {
+      // Last day of the month
+      endDate.setMonth(endDate.getMonth() + 1);
+      endDate.setDate(0);
+    } else if (period === 'quarterly') {
+      // 3 months from start
+      endDate.setMonth(endDate.getMonth() + 3);
+      endDate.setDate(endDate.getDate() - 1);
+    } else if (period === 'yearly') {
+      // 1 year from start
+      endDate.setFullYear(endDate.getFullYear() + 1);
+      endDate.setDate(endDate.getDate() - 1);
+    }
+    
+    // Format dates for input fields (YYYY-MM-DD)
+    startDateInput.value = startDate.toISOString().split('T')[0];
+    endDateInput.value = endDate.toISOString().split('T')[0];
+  });
+</script>
+{% endblock %}

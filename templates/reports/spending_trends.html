@@ -1,0 +1,293 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container">
+  <div class="row mb-4">
+    <div class="col-md-8">
+      <h1 class="mb-3">
+        <i class="bi bi-graph-up-arrow me-2"></i>Spending Trends
+      </h1>
+      <p class="text-muted">Track how your spending has changed over time with trend analysis.</p>
+    </div>
+    <div class="col-md-4 text-md-end d-flex align-items-center justify-content-md-end">
+      <a href="{{ url_for('reports_dashboard') }}" class="btn btn-outline-secondary">
+        <i class="bi bi-arrow-left me-1"></i>Back to Reports
+      </a>
+    </div>
+  </div>
+
+  <!-- Filters -->
+  <div class="card shadow-sm mb-4">
+    <div class="card-body">
+      <form id="filterForm" class="row g-3 align-items-end">
+        <div class="col-md-4">
+          <label for="months" class="form-label">Time Period</label>
+          <select id="months" name="months" class="form-select">
+            <option value="3" {% if months == 3 %}selected{% endif %}>Last 3 Months</option>
+            <option value="6" {% if months == 6 %}selected{% endif %}>Last 6 Months</option>
+            <option value="12" {% if months == 12 %}selected{% endif %}>Last 12 Months</option>
+            <option value="24" {% if months == 24 %}selected{% endif %}>Last 24 Months</option>
+            <option value="36" {% if months == 36 %}selected{% endif %}>Last 36 Months</option>
+          </select>
+        </div>
+        <div class="col-md-4">
+          <label for="category" class="form-label">Category</label>
+          <select id="category" name="category" class="form-select">
+            <option value="all" {% if selected_category == 'all' %}selected{% endif %}>All Categories</option>
+            {% for category in categories %}
+            <option value="{{ category.id }}" {% if selected_category == category.id %}selected{% endif %}>{{ category.name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="col-md-4">
+          <button type="submit" class="btn btn-primary w-100">Apply Filters</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Main Chart -->
+  <div class="card shadow-sm mb-4">
+    <div class="card-header bg-white d-flex justify-content-between align-items-center">
+      <h5 class="mb-0">Spending Trend</h5>
+      <div class="btn-group btn-group-sm" role="group">
+        <button type="button" class="btn btn-outline-primary" id="viewBar">Bar</button>
+        <button type="button" class="btn btn-outline-primary active" id="viewLine">Line</button>
+      </div>
+    </div>
+    <div class="card-body">
+      <canvas id="trendChart" height="300"></canvas>
+    </div>
+  </div>
+
+  <!-- Trend Statistics -->
+  <div class="row mb-4">
+    <div class="col-md-4">
+      <div class="card shadow-sm h-100">
+        <div class="card-body">
+          <h5 class="card-title">Average Monthly Spending</h5>
+          <p class="display-5 mb-0">₹{{ avg_spending|format_currency }}</p>
+          <p class="text-muted">Based on selected time period</p>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="card shadow-sm h-100">
+        <div class="card-body">
+          <h5 class="card-title">Month-over-Month Change</h5>
+          <p class="display-5 mb-0 {% if avg_mom_change > 0 %}text-danger{% elif avg_mom_change < 0 %}text-success{% endif %}">
+            {{ avg_mom_change|round(1) }}%
+            {% if avg_mom_change > 0 %}
+            <i class="bi bi-arrow-up-right"></i>
+            {% elif avg_mom_change < 0 %}
+            <i class="bi bi-arrow-down-right"></i>
+            {% endif %}
+          </p>
+          <p class="text-muted">Average monthly change</p>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="card shadow-sm h-100">
+        <div class="card-body">
+          <h5 class="card-title">Spending Trend</h5>
+          <p class="display-5 mb-0">
+            {% if avg_mom_change > 5 %}
+            <span class="text-danger">Increasing <i class="bi bi-arrow-up-right"></i></span>
+            {% elif avg_mom_change < -5 %}
+            <span class="text-success">Decreasing <i class="bi bi-arrow-down-right"></i></span>
+            {% else %}
+            <span class="text-info">Stable <i class="bi bi-arrow-right"></i></span>
+            {% endif %}
+          </p>
+          <p class="text-muted">Overall spending pattern</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Monthly Comparison -->
+  <div class="card shadow-sm mb-4">
+    <div class="card-header bg-white">
+      <h5 class="mb-0">Monthly Comparison</h5>
+    </div>
+    <div class="card-body">
+      <div class="table-responsive">
+        <table class="table table-hover">
+          <thead>
+            <tr>
+              <th>Month</th>
+              <th class="text-end">Spending</th>
+              <th class="text-end">Change from Previous</th>
+              <th>Trend</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for label, amount in chart_data.labels|zip(chart_data.datasets[0].data) %}
+            <tr>
+              <td>{{ label }}</td>
+              <td class="text-end">₹{{ amount|format_currency }}</td>
+              <td class="text-end">
+                {% if not loop.first %}
+                  {% set prev_amount = chart_data.datasets[0].data[loop.index0 - 1] %}
+                  {% if prev_amount > 0 %}
+                    {% set change = ((amount - prev_amount) / prev_amount * 100)|round(1) %}
+                    <span class="{% if change > 0 %}text-danger{% elif change < 0 %}text-success{% endif %}">
+                      {{ change }}%
+                    </span>
+                  {% else %}
+                    N/A
+                  {% endif %}
+                {% else %}
+                  N/A
+                {% endif %}
+              </td>
+              <td>
+                {% if not loop.first %}
+                  {% set prev_amount = chart_data.datasets[0].data[loop.index0 - 1] %}
+                  {% if prev_amount > 0 %}
+                    {% set change = ((amount - prev_amount) / prev_amount * 100)|round(1) %}
+                    {% if change > 10 %}
+                      <span class="text-danger"><i class="bi bi-arrow-up-right"></i> Sharp increase</span>
+                    {% elif change > 0 %}
+                      <span class="text-warning"><i class="bi bi-arrow-up-right"></i> Slight increase</span>
+                    {% elif change > -10 %}
+                      <span class="text-info"><i class="bi bi-arrow-down-right"></i> Slight decrease</span>
+                    {% else %}
+                      <span class="text-success"><i class="bi bi-arrow-down-right"></i> Sharp decrease</span>
+                    {% endif %}
+                  {% else %}
+                    <span class="text-muted">No previous data</span>
+                  {% endif %}
+                {% else %}
+                  <span class="text-muted">First month in range</span>
+                {% endif %}
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Insights -->
+  <div class="card shadow-sm mb-4">
+    <div class="card-header bg-white">
+      <h5 class="mb-0">Trend Insights</h5>
+    </div>
+    <div class="card-body">
+      <div class="row">
+        <div class="col-md-12">
+          <h6>Spending Pattern Analysis</h6>
+          <p>
+            {% if chart_data.datasets[0].data|length < 2 %}
+              Not enough data to analyze spending patterns. Add more transactions to see insights.
+            {% else %}
+              {% if avg_mom_change > 10 %}
+                Your spending is <strong class="text-danger">increasing rapidly</strong> at an average rate of {{ avg_mom_change|round(1) }}% per month.
+                Consider reviewing your budget and identifying areas where you can cut back.
+              {% elif avg_mom_change > 5 %}
+                Your spending is <strong class="text-warning">gradually increasing</strong> at an average rate of {{ avg_mom_change|round(1) }}% per month.
+                Monitor your expenses closely to prevent further increases.
+              {% elif avg_mom_change > -5 and avg_mom_change < 5 %}
+                Your spending is <strong class="text-info">relatively stable</strong> with an average monthly change of {{ avg_mom_change|round(1) }}%.
+                This indicates consistent financial habits.
+              {% elif avg_mom_change > -10 %}
+                Your spending is <strong class="text-info">gradually decreasing</strong> at an average rate of {{ avg_mom_change|round(1) }}% per month.
+                Keep up the good work in managing your expenses.
+              {% else %}
+                Your spending is <strong class="text-success">decreasing significantly</strong> at an average rate of {{ avg_mom_change|round(1) }}% per month.
+                This shows excellent progress in reducing expenses.
+              {% endif %}
+            {% endif %}
+          </p>
+          
+          {% if chart_data.datasets[0].data|length >= 3 %}
+            <h6 class="mt-4">Seasonal Patterns</h6>
+            <p>
+              {% set highest_month_index = chart_data.datasets[0].data.index(chart_data.datasets[0].data|max) %}
+              {% set lowest_month_index = chart_data.datasets[0].data.index(chart_data.datasets[0].data|min) %}
+              
+              Your highest spending month was <strong>{{ chart_data.labels[highest_month_index] }}</strong> with ₹{{ chart_data.datasets[0].data[highest_month_index]|format_currency }}.
+              Your lowest spending month was <strong>{{ chart_data.labels[lowest_month_index] }}</strong> with ₹{{ chart_data.datasets[0].data[lowest_month_index]|format_currency }}.
+              
+              {% if highest_month_index > lowest_month_index %}
+                This represents a {{ ((chart_data.datasets[0].data[highest_month_index] - chart_data.datasets[0].data[lowest_month_index]) / chart_data.datasets[0].data[lowest_month_index] * 100)|round(1) }}% increase from your lowest to highest month.
+              {% else %}
+                This represents a {{ ((chart_data.datasets[0].data[lowest_month_index] - chart_data.datasets[0].data[highest_month_index]) / chart_data.datasets[0].data[highest_month_index] * 100)|round(1) }}% decrease from your highest to lowest month.
+              {% endif %}
+            </p>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+  // Chart data from Flask
+  const chartData = {{ chart_data|tojson }};
+  
+  // Create main chart
+  const ctx = document.getElementById('trendChart').getContext('2d');
+  let mainChart = new Chart(ctx, {
+    type: 'line',
+    data: chartData,
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      scales: {
+        y: {
+          beginAtZero: true
+        }
+      }
+    }
+  });
+  
+  // Chart view toggle handlers
+  document.getElementById('viewBar').addEventListener('click', function() {
+    mainChart.destroy();
+    mainChart = new Chart(ctx, {
+      type: 'bar',
+      data: chartData,
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+          y: {
+            beginAtZero: true
+          }
+        }
+      }
+    });
+    
+    // Update active button
+    document.querySelectorAll('.btn-group .btn').forEach(btn => btn.classList.remove('active'));
+    this.classList.add('active');
+  });
+  
+  document.getElementById('viewLine').addEventListener('click', function() {
+    mainChart.destroy();
+    mainChart = new Chart(ctx, {
+      type: 'line',
+      data: chartData,
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+          y: {
+            beginAtZero: true
+          }
+        }
+      }
+    });
+    
+    // Update active button
+    document.querySelectorAll('.btn-group .btn').forEach(btn => btn.classList.remove('active'));
+    this.classList.add('active');
+  });
+</script>
+{% endblock %}

@@ -1,0 +1,214 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container">
+  <div class="row mb-4">
+    <div class="col-md-8">
+      <h1 class="mb-3">
+        <i class="bi bi-arrow-repeat me-2"></i>Recurring Transactions
+      </h1>
+      <p class="text-muted">Manage your recurring expenses and income.</p>
+    </div>
+    <div class="col-md-4 text-md-end d-flex align-items-center justify-content-md-end">
+      <a href="{{ url_for('add_expense') }}" class="btn btn-outline-primary me-2">
+        <i class="bi bi-plus-circle me-1"></i>New Expense
+      </a>
+      <a href="{{ url_for('add_salary') }}" class="btn btn-primary">
+        <i class="bi bi-plus-circle me-1"></i>New Income
+      </a>
+    </div>
+  </div>
+
+  <!-- Recurring Expenses -->
+  <div class="row mb-4">
+    <div class="col-12">
+      <div class="card shadow-sm">
+        <div class="card-header bg-white d-flex justify-content-between align-items-center">
+          <h5 class="mb-0">
+            <i class="bi bi-cash-stack me-2"></i>Recurring Expenses
+          </h5>
+        </div>
+        <div class="card-body p-0">
+          {% if recurring_expenses %}
+          <div class="table-responsive">
+            <table class="table table-hover mb-0">
+              <thead class="table-light">
+                <tr>
+                  <th>Description</th>
+                  <th>Category</th>
+                  <th>Amount</th>
+                  <th>Frequency</th>
+                  <th>Next Date</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for expense in recurring_expenses %}
+                <tr>
+                  <td>{{ expense.description }}</td>
+                  <td>{{ expense.category_name }}</td>
+                  <td class="text-danger">₹{{ expense.amount|format_currency }}</td>
+                  <td>
+                    <span class="badge bg-secondary">{{ expense.recurrence_type|capitalize }}</span>
+                    {% if expense.recurrence_type == 'monthly' and expense.recurrence_day %}
+                    <small class="d-block text-muted">Day {{ expense.recurrence_day }}</small>
+                    {% endif %}
+                  </td>
+                  <td>
+                    {% if expense.next_date %}
+                    {{ expense.next_date|format_date }}
+                    {% else %}
+                    <span class="text-muted">Not scheduled</span>
+                    {% endif %}
+                  </td>
+                  <td>
+                    <div class="btn-group btn-group-sm">
+                      <a href="{{ url_for('edit_recurring_expense', id=expense.id) }}" class="btn btn-outline-primary">
+                        <i class="bi bi-pencil"></i>
+                      </a>
+                      <a href="{{ url_for('delete_expense_series', id=expense.id) }}" class="btn btn-outline-danger" 
+                         onclick="return confirm('Are you sure you want to delete this recurring expense and all future occurrences?');">
+                        <i class="bi bi-trash"></i>
+                      </a>
+                    </div>
+                  </td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+          {% else %}
+          <div class="text-center py-5">
+            <i class="bi bi-cash-stack text-muted display-4 mb-3"></i>
+            <h5>No Recurring Expenses</h5>
+            <p class="text-muted">You don't have any recurring expenses set up yet.</p>
+            <a href="{{ url_for('add_expense') }}" class="btn btn-primary">
+              <i class="bi bi-plus-circle me-1"></i>Add Recurring Expense
+            </a>
+          </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Recurring Income -->
+  <div class="row mb-4">
+    <div class="col-12">
+      <div class="card shadow-sm">
+        <div class="card-header bg-white d-flex justify-content-between align-items-center">
+          <h5 class="mb-0">
+            <i class="bi bi-bank me-2"></i>Recurring Income
+          </h5>
+        </div>
+        <div class="card-body p-0">
+          {% if recurring_salaries %}
+          <div class="table-responsive">
+            <table class="table table-hover mb-0">
+              <thead class="table-light">
+                <tr>
+                  <th>Description</th>
+                  <th>Amount</th>
+                  <th>Frequency</th>
+                  <th>Next Date</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for salary in recurring_salaries %}
+                <tr>
+                  <td>{{ salary.description }}</td>
+                  <td class="text-success">₹{{ salary.amount|format_currency }}</td>
+                  <td>
+                    <span class="badge bg-secondary">{{ salary.recurrence_type|capitalize }}</span>
+                    {% if salary.recurrence_type == 'monthly' and salary.recurrence_day %}
+                    <small class="d-block text-muted">Day {{ salary.recurrence_day }}</small>
+                    {% endif %}
+                  </td>
+                  <td>
+                    {% if salary.next_date %}
+                    {{ salary.next_date|format_date }}
+                    {% else %}
+                    <span class="text-muted">Not scheduled</span>
+                    {% endif %}
+                  </td>
+                  <td>
+                    <div class="btn-group btn-group-sm">
+                      <a href="{{ url_for('edit_recurring_salary', id=salary.id) }}" class="btn btn-outline-primary">
+                        <i class="bi bi-pencil"></i>
+                      </a>
+                      <a href="{{ url_for('delete_salary_series', id=salary.id) }}" class="btn btn-outline-danger" 
+                         onclick="return confirm('Are you sure you want to delete this recurring income and all future occurrences?');">
+                        <i class="bi bi-trash"></i>
+                      </a>
+                    </div>
+                  </td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+          {% else %}
+          <div class="text-center py-5">
+            <i class="bi bi-bank text-muted display-4 mb-3"></i>
+            <h5>No Recurring Income</h5>
+            <p class="text-muted">You don't have any recurring income set up yet.</p>
+            <a href="{{ url_for('add_salary') }}" class="btn btn-primary">
+              <i class="bi bi-plus-circle me-1"></i>Add Recurring Income
+            </a>
+          </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Recurring Transactions Tips -->
+  <div class="row">
+    <div class="col-12">
+      <div class="card shadow-sm mb-4">
+        <div class="card-header bg-white">
+          <h5 class="mb-0">Tips for Recurring Transactions</h5>
+        </div>
+        <div class="card-body">
+          <div class="row">
+            <div class="col-md-4">
+              <div class="d-flex mb-3">
+                <div class="me-3">
+                  <i class="bi bi-calendar-check text-primary" style="font-size: 2rem;"></i>
+                </div>
+                <div>
+                  <h6>Automate Your Finances</h6>
+                  <p class="text-muted small mb-0">Set up recurring transactions for regular bills and income to ensure they're always tracked.</p>
+                </div>
+              </div>
+            </div>
+            <div class="col-md-4">
+              <div class="d-flex mb-3">
+                <div class="me-3">
+                  <i class="bi bi-bell text-primary" style="font-size: 2rem;"></i>
+                </div>
+                <div>
+                  <h6>Stay Informed</h6>
+                  <p class="text-muted small mb-0">The system will automatically create transactions on their due dates, keeping your financial picture accurate.</p>
+                </div>
+              </div>
+            </div>
+            <div class="col-md-4">
+              <div class="d-flex mb-3">
+                <div class="me-3">
+                  <i class="bi bi-gear text-primary" style="font-size: 2rem;"></i>
+                </div>
+                <div>
+                  <h6>Easy Management</h6>
+                  <p class="text-muted small mb-0">Edit or delete recurring transactions at any time to adapt to your changing financial situation.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

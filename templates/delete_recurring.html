@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container">
+  <div class="row justify-content-center">
+    <div class="col-md-6">
+      <div class="card shadow-sm">
+        <div class="card-header bg-white">
+          <h3 class="mb-0 text-danger">
+            <i class="bi bi-exclamation-triangle me-2"></i>Delete Recurring Transaction
+          </h3>
+        </div>
+        <div class="card-body">
+          <div class="alert alert-warning">
+            <i class="bi bi-question-circle me-2"></i>
+            <strong>This is a recurring transaction.</strong> How would you like to delete it?
+          </div>
+          
+          <p class="mb-4">
+            <strong>Transaction:</strong> {{ description }}
+          </p>
+          
+          <div class="d-grid gap-3">
+            {% if transaction_type == 'expense' %}
+            <a href="{{ url_for('delete_expense', id=transaction_id) }}" class="btn btn-outline-danger">
+              <i class="bi bi-trash me-2"></i>Delete Only This Transaction
+            </a>
+            <a href="{{ url_for('delete_expense_series', id=transaction_id) }}" class="btn btn-danger">
+              <i class="bi bi-trash me-2"></i>Delete This and All Future Transactions
+            </a>
+            {% else %}
+            <a href="{{ url_for('delete_salary', id=transaction_id) }}" class="btn btn-outline-danger">
+              <i class="bi bi-trash me-2"></i>Delete Only This Transaction
+            </a>
+            <a href="{{ url_for('delete_salary_series', id=transaction_id) }}" class="btn btn-danger">
+              <i class="bi bi-trash me-2"></i>Delete This and All Future Transactions
+            </a>
+            {% endif %}
+            <a href="{{ url_for('recurring_transactions') }}" class="btn btn-secondary">
+              <i class="bi bi-x-circle me-2"></i>Cancel
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

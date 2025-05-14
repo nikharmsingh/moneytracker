@@ -1,0 +1,206 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container">
+  <div class="row mb-4">
+    <div class="col-md-8">
+      <h1 class="mb-3">
+        <i class="bi bi-pie-chart me-2"></i>Budget Overview
+      </h1>
+      <p class="text-muted">Track your spending against your active budgets.</p>
+    </div>
+    <div class="col-md-4 text-md-end d-flex align-items-center justify-content-md-end">
+      <a href="{{ url_for('manage_budgets') }}" class="btn btn-outline-primary me-2">
+        <i class="bi bi-gear me-1"></i>Manage Budgets
+      </a>
+      <a href="{{ url_for('add_budget') }}" class="btn btn-primary">
+        <i class="bi bi-plus-circle me-1"></i>New Budget
+      </a>
+    </div>
+  </div>
+
+  {% if budgets %}
+  <!-- Budget Summary Cards -->
+  <div class="row mb-4">
+    {% for budget in budgets %}
+    <div class="col-md-4 mb-4">
+      <div class="card shadow-sm h-100">
+        <div class="card-header bg-white d-flex justify-content-between align-items-center">
+          <h5 class="mb-0">{{ budget.name or 'Unnamed Budget' }}</h5>
+          <span class="badge bg-secondary">{{ budget.period|capitalize }}</span>
+        </div>
+        <div class="card-body">
+          <div class="mb-3">
+            <div class="d-flex justify-content-between mb-1">
+              <span class="text-muted">Category:</span>
+              <span>{{ budget.category_name }}</span>
+            </div>
+            <div class="d-flex justify-content-between mb-1">
+              <span class="text-muted">Budget:</span>
+              <span class="fw-bold">₹{{ budget.amount|format_currency }}</span>
+            </div>
+            <div class="d-flex justify-content-between mb-1">
+              <span class="text-muted">Spent:</span>
+              <span class="fw-bold">₹{{ budget.spent|format_currency }}</span>
+            </div>
+            <div class="d-flex justify-content-between mb-1">
+              <span class="text-muted">Remaining:</span>
+              <span class="fw-bold">₹{{ budget.remaining|format_currency }}</span>
+            </div>
+          </div>
+          
+          <div class="mb-3">
+            <div class="d-flex justify-content-between mb-1">
+              <span class="text-muted">Progress:</span>
+              <span class="fw-bold">{{ budget.percentage|format_percentage }}</span>
+            </div>
+            <div class="progress" style="height: 15px;">
+              {% if budget.percentage >= 100 %}
+              <div class="progress-bar bg-danger" role="progressbar" style="width: 100%;" 
+                   aria-valuenow="{{ budget.percentage }}" aria-valuemin="0" aria-valuemax="100"></div>
+              {% elif budget.percentage >= budget.notification_threshold %}
+              <div class="progress-bar bg-warning" role="progressbar" style="width: {{ budget.percentage }}%;" 
+                   aria-valuenow="{{ budget.percentage }}" aria-valuemin="0" aria-valuemax="100"></div>
+              {% else %}
+              <div class="progress-bar" role="progressbar" style="width: {{ budget.percentage }}%; background-color: {{ budget.color }};" 
+                   aria-valuenow="{{ budget.percentage }}" aria-valuemin="0" aria-valuemax="100"></div>
+              {% endif %}
+            </div>
+          </div>
+          
+          <div class="small text-muted mb-3">
+            <div><i class="bi bi-calendar-range me-1"></i>{{ budget.start_date|format_date }} to {{ budget.end_date|format_date }}</div>
+            
+            {% if budget.percentage >= 100 %}
+            <div class="text-danger mt-2">
+              <i class="bi bi-exclamation-triangle-fill me-1"></i>You've exceeded your budget!
+            </div>
+            {% elif budget.percentage >= budget.notification_threshold %}
+            <div class="text-warning mt-2">
+              <i class="bi bi-exclamation-circle-fill me-1"></i>You're approaching your budget limit!
+            </div>
+            {% else %}
+            <div class="text-success mt-2">
+              <i class="bi bi-check-circle-fill me-1"></i>Your spending is within budget.
+            </div>
+            {% endif %}
+          </div>
+          
+          <div class="d-grid gap-2">
+            <a href="{{ url_for('edit_budget', budget_id=budget.id) }}" class="btn btn-outline-primary btn-sm">
+              <i class="bi bi-pencil me-1"></i>Edit Budget
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+
+  <!-- Budget Insights -->
+  <div class="row">
+    <div class="col-12">
+      <div class="card shadow-sm mb-4">
+        <div class="card-header bg-white">
+          <h5 class="mb-0">Budget Insights</h5>
+        </div>
+        <div class="card-body">
+          <div class="row">
+            {% set over_budget_count = 0 %}
+            {% set warning_count = 0 %}
+            {% set healthy_count = 0 %}
+            
+            {% for budget in budgets %}
+              {% if budget.percentage >= 100 %}
+                {% set over_budget_count = over_budget_count + 1 %}
+              {% elif budget.percentage >= budget.notification_threshold %}
+                {% set warning_count = warning_count + 1 %}
+              {% else %}
+                {% set healthy_count = healthy_count + 1 %}
+              {% endif %}
+            {% endfor %}
+            
+            <div class="col-md-4">
+              <div class="d-flex align-items-center mb-3">
+                <div class="me-3">
+                  <div class="rounded-circle bg-success d-flex align-items-center justify-content-center" 
+                       style="width: 50px; height: 50px;">
+                    <i class="bi bi-check-lg text-white" style="font-size: 1.5rem;"></i>
+                  </div>
+                </div>
+                <div>
+                  <h6 class="mb-0">Healthy Budgets</h6>
+                  <p class="text-muted mb-0">{{ healthy_count }} budget(s) on track</p>
+                </div>
+              </div>
+            </div>
+            
+            <div class="col-md-4">
+              <div class="d-flex align-items-center mb-3">
+                <div class="me-3">
+                  <div class="rounded-circle bg-warning d-flex align-items-center justify-content-center" 
+                       style="width: 50px; height: 50px;">
+                    <i class="bi bi-exclamation text-white" style="font-size: 1.5rem;"></i>
+                  </div>
+                </div>
+                <div>
+                  <h6 class="mb-0">Warning Zone</h6>
+                  <p class="text-muted mb-0">{{ warning_count }} budget(s) approaching limit</p>
+                </div>
+              </div>
+            </div>
+            
+            <div class="col-md-4">
+              <div class="d-flex align-items-center mb-3">
+                <div class="me-3">
+                  <div class="rounded-circle bg-danger d-flex align-items-center justify-content-center" 
+                       style="width: 50px; height: 50px;">
+                    <i class="bi bi-exclamation-triangle text-white" style="font-size: 1.5rem;"></i>
+                  </div>
+                </div>
+                <div>
+                  <h6 class="mb-0">Over Budget</h6>
+                  <p class="text-muted mb-0">{{ over_budget_count }} budget(s) exceeded</p>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          {% if over_budget_count > 0 or warning_count > 0 %}
+          <div class="alert alert-info mt-3 mb-0">
+            <i class="bi bi-lightbulb me-2"></i>
+            <strong>Tip:</strong> 
+            {% if over_budget_count > 0 %}
+            Consider reviewing your spending habits or adjusting your budget amounts for the {{ over_budget_count }} exceeded budget(s).
+            {% elif warning_count > 0 %}
+            You're approaching the limit on {{ warning_count }} budget(s). Try to limit your spending in these categories for the rest of the period.
+            {% endif %}
+          </div>
+          {% else %}
+          <div class="alert alert-success mt-3 mb-0">
+            <i class="bi bi-emoji-smile me-2"></i>
+            <strong>Great job!</strong> All your budgets are on track. Keep up the good work!
+          </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+  {% else %}
+  <div class="row">
+    <div class="col-12">
+      <div class="card shadow-sm mb-4">
+        <div class="card-body text-center py-5">
+          <i class="bi bi-pie-chart display-1 text-muted mb-3"></i>
+          <h3>No Active Budgets</h3>
+          <p class="text-muted">You don't have any active budgets for the current period.</p>
+          <a href="{{ url_for('add_budget') }}" class="btn btn-primary mt-2">
+            <i class="bi bi-plus-circle me-1"></i>Create a Budget
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

@@ -24,12 +24,56 @@
             </div>
             <div class="col-md-6 mb-3">
               <label for="date" class="form-label">Date</label>
-              <input type="date" class="form-control" id="date" name="date" required>
+              <input type="date" class="form-control" id="date" name="date" value="{{ default_date }}" required>
               <div class="invalid-feedback">
                 Please select a date.
               </div>
             </div>
           </div>
+          
+          <div class="mb-3">
+            <label for="description" class="form-label">Description</label>
+            <input type="text" class="form-control" id="description" name="description" value="Salary">
+          </div>
+          
+          <!-- Recurring Salary Options -->
+          <div class="mb-3">
+            <div class="form-check form-switch">
+              <input class="form-check-input" type="checkbox" id="is_recurring" name="is_recurring">
+              <label class="form-check-label" for="is_recurring">Make this a recurring salary</label>
+            </div>
+          </div>
+          
+          <div id="recurring_options" class="mb-3 border rounded p-3 bg-light" style="display: none;">
+            <h5 class="mb-3">Recurring Options</h5>
+            
+            <div class="row mb-3">
+              <div class="col-md-6">
+                <label for="recurrence_type" class="form-label">Recurrence Pattern</label>
+                <select class="form-select" id="recurrence_type" name="recurrence_type">
+                  <option value="weekly">Weekly</option>
+                  <option value="bi-weekly">Bi-weekly</option>
+                  <option value="monthly" selected>Monthly</option>
+                </select>
+              </div>
+              
+              <div class="col-md-6" id="monthly_options">
+                <label for="recurrence_day" class="form-label">Day of Month</label>
+                <select class="form-select" id="recurrence_day" name="recurrence_day">
+                  {% for day in range(1, 32) %}
+                  <option value="{{ day }}">{{ day }}</option>
+                  {% endfor %}
+                </select>
+              </div>
+            </div>
+            
+            <div class="mb-3">
+              <label for="recurrence_end_date" class="form-label">End Date (Optional)</label>
+              <input type="date" class="form-control" id="recurrence_end_date" name="recurrence_end_date">
+              <div class="form-text">Leave blank for no end date</div>
+            </div>
+          </div>
+          
           <div class="d-grid gap-2 d-md-flex justify-content-md-end">
             <a href="{{ url_for('index') }}" class="btn btn-secondary me-md-2">
               <i class="bi bi-x-lg me-1"></i>Cancel
@@ -60,5 +104,39 @@
         }, false)
       })
   })()
+  
+  // Handle recurring salary options
+  const isRecurringCheckbox = document.getElementById('is_recurring');
+  const recurringOptions = document.getElementById('recurring_options');
+  const recurrenceTypeSelect = document.getElementById('recurrence_type');
+  const monthlyOptions = document.getElementById('monthly_options');
+  const dateInput = document.getElementById('date');
+  const recurrenceDaySelect = document.getElementById('recurrence_day');
+  
+  // Show/hide recurring options based on checkbox
+  isRecurringCheckbox.addEventListener('change', function() {
+    recurringOptions.style.display = this.checked ? 'block' : 'none';
+    
+    // Set the default recurrence day to match the selected date
+    if (this.checked && dateInput.value) {
+      const selectedDate = new Date(dateInput.value);
+      const dayOfMonth = selectedDate.getDate();
+      recurrenceDaySelect.value = dayOfMonth;
+    }
+  });
+  
+  // Show/hide monthly options based on recurrence type
+  recurrenceTypeSelect.addEventListener('change', function() {
+    monthlyOptions.style.display = this.value === 'monthly' ? 'block' : 'none';
+  });
+  
+  // Update recurrence day when date changes
+  dateInput.addEventListener('change', function() {
+    if (isRecurringCheckbox.checked && recurrenceTypeSelect.value === 'monthly') {
+      const selectedDate = new Date(this.value);
+      const dayOfMonth = selectedDate.getDate();
+      recurrenceDaySelect.value = dayOfMonth;
+    }
+  });
 </script>
 {% endblock %}

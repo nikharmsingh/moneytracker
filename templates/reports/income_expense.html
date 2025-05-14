@@ -1,0 +1,317 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container">
+  <div class="row mb-4">
+    <div class="col-md-8">
+      <h1 class="mb-3">
+        <i class="bi bi-bar-chart me-2"></i>Income vs Expenses
+      </h1>
+      <p class="text-muted">Compare your income and expenses to track your savings rate over time.</p>
+    </div>
+    <div class="col-md-4 text-md-end d-flex align-items-center justify-content-md-end">
+      <a href="{{ url_for('reports_dashboard') }}" class="btn btn-outline-secondary">
+        <i class="bi bi-arrow-left me-1"></i>Back to Reports
+      </a>
+    </div>
+  </div>
+
+  <!-- Filters -->
+  <div class="card shadow-sm mb-4">
+    <div class="card-body">
+      <form id="filterForm" class="row g-3 align-items-end">
+        <div class="col-md-4">
+          <label for="year" class="form-label">Year</label>
+          <select id="year" name="year" class="form-select">
+            {% for year in all_years %}
+            <option value="{{ year }}" {% if year == selected_year %}selected{% endif %}>{{ year }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="col-md-4">
+          <label for="period_type" class="form-label">Period Type</label>
+          <select id="period_type" name="period_type" class="form-select">
+            <option value="monthly" {% if period_type == 'monthly' %}selected{% endif %}>Monthly</option>
+            <option value="quarterly" {% if period_type == 'quarterly' %}selected{% endif %}>Quarterly</option>
+            <option value="yearly" {% if period_type == 'yearly' %}selected{% endif %}>Yearly</option>
+          </select>
+        </div>
+        <div class="col-md-4">
+          <button type="submit" class="btn btn-primary w-100">Apply Filters</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Main Chart -->
+  <div class="card shadow-sm mb-4">
+    <div class="card-header bg-white d-flex justify-content-between align-items-center">
+      <h5 class="mb-0">Income vs Expenses</h5>
+      <div class="btn-group btn-group-sm" role="group">
+        <button type="button" class="btn btn-outline-primary active" id="viewBar">Bar</button>
+        <button type="button" class="btn btn-outline-primary" id="viewLine">Line</button>
+        <button type="button" class="btn btn-outline-primary" id="viewArea">Area</button>
+      </div>
+    </div>
+    <div class="card-body">
+      <canvas id="incomeExpenseChart" height="300"></canvas>
+    </div>
+  </div>
+
+  <!-- Summary Table -->
+  <div class="card shadow-sm mb-4">
+    <div class="card-header bg-white">
+      <h5 class="mb-0">Financial Summary</h5>
+    </div>
+    <div class="card-body">
+      <div class="table-responsive">
+        <table class="table table-hover">
+          <thead>
+            <tr>
+              <th>Period</th>
+              {% for label in period_labels %}
+              <th class="text-end">{{ label }}</th>
+              {% endfor %}
+              <th class="text-end">Total</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr class="table-success">
+              <td><strong>Income</strong></td>
+              {% for amount in income_data %}
+              <td class="text-end">₹{{ amount|format_currency }}</td>
+              {% endfor %}
+              <td class="text-end"><strong>₹{{ income_data|sum|format_currency }}</strong></td>
+            </tr>
+            <tr class="table-danger">
+              <td><strong>Expenses</strong></td>
+              {% for amount in expense_data %}
+              <td class="text-end">₹{{ amount|format_currency }}</td>
+              {% endfor %}
+              <td class="text-end"><strong>₹{{ expense_data|sum|format_currency }}</strong></td>
+            </tr>
+            <tr class="table-primary">
+              <td><strong>Savings</strong></td>
+              {% for amount in savings_data %}
+              <td class="text-end">₹{{ amount|format_currency }}</td>
+              {% endfor %}
+              <td class="text-end"><strong>₹{{ savings_data|sum|format_currency }}</strong></td>
+            </tr>
+            <tr>
+              <td><strong>Savings Rate</strong></td>
+              {% for rate in savings_rate %}
+              <td class="text-end">{{ rate }}%</td>
+              {% endfor %}
+              {% set total_income = income_data|sum %}
+              {% set total_savings = savings_data|sum %}
+              {% set overall_rate = (total_savings / total_income * 100)|round(1) if total_income > 0 else 0 %}
+              <td class="text-end"><strong>{{ overall_rate }}%</strong></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Savings Rate Chart -->
+  <div class="card shadow-sm mb-4">
+    <div class="card-header bg-white">
+      <h5 class="mb-0">Savings Rate</h5>
+    </div>
+    <div class="card-body">
+      <canvas id="savingsRateChart" height="200"></canvas>
+    </div>
+  </div>
+
+  <!-- Insights -->
+  <div class="card shadow-sm mb-4">
+    <div class="card-header bg-white">
+      <h5 class="mb-0">Financial Insights</h5>
+    </div>
+    <div class="card-body">
+      <div class="row">
+        <div class="col-md-4">
+          <div class="card border-0 bg-light mb-3">
+            <div class="card-body">
+              <h6 class="card-title">Average Monthly Income</h6>
+              {% if period_type == 'monthly' %}
+                {% set avg = (income_data|sum / income_data|length) if income_data|length > 0 else 0 %}
+              {% elif period_type == 'quarterly' %}
+                {% set avg = (income_data|sum / (income_data|length * 3)) if income_data|length > 0 else 0 %}
+              {% else %}
+                {% set avg = (income_data|sum / 12) if income_data|sum > 0 else 0 %}
+              {% endif %}
+              <p class="display-6 mb-0">₹{{ avg|format_currency }}</p>
+              <p class="text-muted">Per month</p>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="card border-0 bg-light mb-3">
+            <div class="card-body">
+              <h6 class="card-title">Average Monthly Expenses</h6>
+              {% if period_type == 'monthly' %}
+                {% set avg = (expense_data|sum / expense_data|length) if expense_data|length > 0 else 0 %}
+              {% elif period_type == 'quarterly' %}
+                {% set avg = (expense_data|sum / (expense_data|length * 3)) if expense_data|length > 0 else 0 %}
+              {% else %}
+                {% set avg = (expense_data|sum / 12) if expense_data|sum > 0 else 0 %}
+              {% endif %}
+              <p class="display-6 mb-0">₹{{ avg|format_currency }}</p>
+              <p class="text-muted">Per month</p>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="card border-0 bg-light mb-3">
+            <div class="card-body">
+              <h6 class="card-title">Best Savings Rate</h6>
+              {% set best_rate = {'index': 0, 'rate': 0} %}
+              {% for rate in savings_rate %}
+                {% if rate > best_rate.rate %}
+                  {% set _ = best_rate.update({'index': loop.index0, 'rate': rate}) %}
+                {% endif %}
+              {% endfor %}
+              <p class="display-6 mb-0">{{ best_rate.rate }}%</p>
+              <p class="text-muted">{{ period_labels[best_rate.index] }}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+  // Chart data from Flask
+  const chartData = {{ chart_data|tojson }};
+  const savingsRate = {{ savings_rate|tojson }};
+  const periodLabels = {{ period_labels|tojson }};
+  
+  // Create main chart
+  const ctx = document.getElementById('incomeExpenseChart').getContext('2d');
+  let mainChart = new Chart(ctx, {
+    type: 'bar',
+    data: chartData,
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      scales: {
+        y: {
+          beginAtZero: true
+        }
+      }
+    }
+  });
+  
+  // Create savings rate chart
+  const rateCtx = document.getElementById('savingsRateChart').getContext('2d');
+  const rateChart = new Chart(rateCtx, {
+    type: 'line',
+    data: {
+      labels: periodLabels,
+      datasets: [{
+        label: 'Savings Rate (%)',
+        data: savingsRate,
+        backgroundColor: 'rgba(54, 162, 235, 0.2)',
+        borderColor: 'rgba(54, 162, 235, 1)',
+        borderWidth: 2,
+        tension: 0.4,
+        fill: true
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      scales: {
+        y: {
+          beginAtZero: true,
+          suggestedMax: 100
+        }
+      }
+    }
+  });
+  
+  // Chart view toggle handlers
+  document.getElementById('viewBar').addEventListener('click', function() {
+    mainChart.destroy();
+    mainChart = new Chart(ctx, {
+      type: 'bar',
+      data: chartData,
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+          y: {
+            beginAtZero: true
+          }
+        }
+      }
+    });
+    
+    // Update active button
+    document.querySelectorAll('.btn-group .btn').forEach(btn => btn.classList.remove('active'));
+    this.classList.add('active');
+  });
+  
+  document.getElementById('viewLine').addEventListener('click', function() {
+    mainChart.destroy();
+    
+    // Convert to line chart data
+    const lineData = JSON.parse(JSON.stringify(chartData)); // Deep copy
+    lineData.datasets.forEach(dataset => {
+      dataset.fill = false;
+      dataset.tension = 0.4;
+    });
+    
+    mainChart = new Chart(ctx, {
+      type: 'line',
+      data: lineData,
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+          y: {
+            beginAtZero: true
+          }
+        }
+      }
+    });
+    
+    // Update active button
+    document.querySelectorAll('.btn-group .btn').forEach(btn => btn.classList.remove('active'));
+    this.classList.add('active');
+  });
+  
+  document.getElementById('viewArea').addEventListener('click', function() {
+    mainChart.destroy();
+    
+    // Convert to area chart data
+    const areaData = JSON.parse(JSON.stringify(chartData)); // Deep copy
+    areaData.datasets.forEach(dataset => {
+      dataset.fill = true;
+      dataset.tension = 0.4;
+    });
+    
+    mainChart = new Chart(ctx, {
+      type: 'line',
+      data: areaData,
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+          y: {
+            beginAtZero: true
+          }
+        }
+      }
+    });
+    
+    // Update active button
+    document.querySelectorAll('.btn-group .btn').forEach(btn => btn.classList.remove('active'));
+    this.classList.add('active');
+  });
+</script>
+{% endblock %}

@@ -1,0 +1,307 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container">
+  <div class="row mb-4">
+    <div class="col-md-8">
+      <h1 class="mb-3">
+        <i class="bi bi-wallet2 me-2"></i>Budget Analysis
+      </h1>
+      <p class="text-muted">Evaluate your budget performance and track your progress over time.</p>
+    </div>
+    <div class="col-md-4 text-md-end d-flex align-items-center justify-content-md-end">
+      <a href="{{ url_for('reports_dashboard') }}" class="btn btn-outline-secondary">
+        <i class="bi bi-arrow-left me-1"></i>Back to Reports
+      </a>
+    </div>
+  </div>
+
+  <!-- Filters -->
+  <div class="card shadow-sm mb-4">
+    <div class="card-body">
+      <form id="filterForm" class="row g-3 align-items-end">
+        <div class="col-md-4">
+          <label for="year" class="form-label">Year</label>
+          <select id="year" name="year" class="form-select">
+            {% for year in all_years %}
+            <option value="{{ year }}" {% if year == selected_year %}selected{% endif %}>{{ year }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="col-md-4">
+          <label for="month" class="form-label">Month</label>
+          <select id="month" name="month" class="form-select">
+            {% for i in range(1, 13) %}
+            <option value="{{ i }}" {% if i == selected_month %}selected{% endif %}>{{ calendar.month_name[i] }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="col-md-4">
+          <button type="submit" class="btn btn-primary w-100">Apply Filters</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Budget Summary -->
+  <div class="card shadow-sm mb-4">
+    <div class="card-header bg-white">
+      <h5 class="mb-0">Budget Summary for {{ month_name }} {{ selected_year }}</h5>
+    </div>
+    <div class="card-body">
+      <div class="row">
+        {% set total_budgeted = budget_performance|map(attribute='budget_amount')|sum %}
+        {% set total_spent = budget_performance|map(attribute='spent_amount')|sum %}
+        {% set total_remaining = total_budgeted - total_spent %}
+        {% set percentage = (total_spent / total_budgeted * 100)|round if total_budgeted > 0 else 0 %}
+        
+        <div class="col-md-4">
+          <div class="card border-0 bg-light mb-3">
+            <div class="card-body">
+              <h6 class="card-title">Total Budgeted</h6>
+              <p class="display-6 mb-0">₹{{ total_budgeted|format_currency }}</p>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="card border-0 bg-light mb-3">
+            <div class="card-body">
+              <h6 class="card-title">Total Spent</h6>
+              <p class="display-6 mb-0">₹{{ total_spent|format_currency }}</p>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="card border-0 bg-light mb-3">
+            <div class="card-body">
+              <h6 class="card-title">Remaining</h6>
+              <p class="display-6 mb-0 {% if total_remaining < 0 %}text-danger{% else %}text-success{% endif %}">
+                ₹{{ total_remaining|format_currency }}
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="progress mt-3" style="height: 25px;">
+        <div class="progress-bar {% if percentage > 100 %}bg-danger{% elif percentage > 75 %}bg-warning{% else %}bg-success{% endif %}" 
+             role="progressbar" 
+             style="width: {{ min(100, percentage) }}%;" 
+             aria-valuenow="{{ percentage }}" 
+             aria-valuemin="0" 
+             aria-valuemax="100">
+          {{ percentage }}% Used
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Budget vs Actual Chart -->
+  <div class="card shadow-sm mb-4">
+    <div class="card-header bg-white">
+      <h5 class="mb-0">Budget vs Actual Spending</h5>
+    </div>
+    <div class="card-body">
+      <canvas id="comparisonChart" height="300"></canvas>
+    </div>
+  </div>
+
+  <!-- Percentage Used Chart -->
+  <div class="card shadow-sm mb-4">
+    <div class="card-header bg-white">
+      <h5 class="mb-0">Budget Utilization</h5>
+    </div>
+    <div class="card-body">
+      <canvas id="percentageChart" height="300"></canvas>
+    </div>
+  </div>
+
+  <!-- Historical Performance -->
+  <div class="card shadow-sm mb-4">
+    <div class="card-header bg-white">
+      <h5 class="mb-0">Historical Budget Performance ({{ selected_year }})</h5>
+    </div>
+    <div class="card-body">
+      <canvas id="historicalChart" height="300"></canvas>
+    </div>
+  </div>
+
+  <!-- Budget Details Table -->
+  <div class="card shadow-sm mb-4">
+    <div class="card-header bg-white">
+      <h5 class="mb-0">Budget Details</h5>
+    </div>
+    <div class="card-body">
+      <div class="table-responsive">
+        <table class="table table-hover">
+          <thead>
+            <tr>
+              <th>Budget</th>
+              <th>Category</th>
+              <th class="text-end">Budgeted</th>
+              <th class="text-end">Spent</th>
+              <th class="text-end">Remaining</th>
+              <th>Progress</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for budget in budget_performance %}
+            <tr>
+              <td>{{ budget.budget_name }}</td>
+              <td>{{ budget.category_name }}</td>
+              <td class="text-end">₹{{ budget.budget_amount|format_currency }}</td>
+              <td class="text-end">₹{{ budget.spent_amount|format_currency }}</td>
+              <td class="text-end {% if budget.remaining_amount < 0 %}text-danger{% endif %}">
+                ₹{{ budget.remaining_amount|format_currency }}
+              </td>
+              <td>
+                <div class="progress" style="height: 20px;">
+                  <div class="progress-bar {% if budget.percentage > 100 %}bg-danger{% elif budget.percentage > 75 %}bg-warning{% else %}bg-success{% endif %}" 
+                       role="progressbar" 
+                       style="width: {{ min(100, budget.percentage) }}%;" 
+                       aria-valuenow="{{ budget.percentage }}" 
+                       aria-valuemin="0" 
+                       aria-valuemax="100">
+                    {{ budget.percentage|round }}%
+                  </div>
+                </div>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Insights -->
+  <div class="card shadow-sm mb-4">
+    <div class="card-header bg-white">
+      <h5 class="mb-0">Budget Insights</h5>
+    </div>
+    <div class="card-body">
+      <div class="row">
+        <div class="col-md-12">
+          <h6>Budget Performance Analysis</h6>
+          <p>
+            {% if budget_performance|length == 0 %}
+              No budget data available for this period. Create budgets to track your spending against targets.
+            {% else %}
+              {% if percentage > 100 %}
+                You've <strong class="text-danger">exceeded your overall budget</strong> by {{ (percentage - 100)|round }}%.
+                Consider reviewing your spending habits and adjusting your budget for next month.
+              {% elif percentage > 90 %}
+                You've used <strong class="text-warning">{{ percentage|round }}% of your overall budget</strong>.
+                You're very close to your limit - be careful with additional expenses this month.
+              {% elif percentage > 75 %}
+                You've used <strong>{{ percentage|round }}% of your overall budget</strong>.
+                You're on track but should monitor your spending for the rest of the month.
+              {% else %}
+                You've used <strong class="text-success">{{ percentage|round }}% of your overall budget</strong>.
+                You're well within your budget limits for this month.
+              {% endif %}
+            {% endif %}
+          </p>
+          
+          {% if budget_performance|length > 0 %}
+            <h6 class="mt-4">Category Analysis</h6>
+            <ul>
+              {% for budget in budget_performance %}
+                {% if budget.percentage > 100 %}
+                  <li class="text-danger">
+                    <strong>{{ budget.category_name }}</strong>: Exceeded budget by {{ (budget.percentage - 100)|round }}%
+                    (₹{{ (budget.spent_amount - budget.budget_amount)|format_currency }} over budget)
+                  </li>
+                {% elif budget.percentage > 90 %}
+                  <li class="text-warning">
+                    <strong>{{ budget.category_name }}</strong>: Almost at budget limit ({{ budget.percentage|round }}% used)
+                  </li>
+                {% endif %}
+              {% endfor %}
+              
+              {% if budget_performance|selectattr('percentage', 'gt', 90)|list|length == 0 %}
+                <li class="text-success">All categories are well within budget limits.</li>
+              {% endif %}
+            </ul>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+  // Chart data from Flask
+  const comparisonChart = {{ comparison_chart|tojson }};
+  const percentageChart = {{ percentage_chart|tojson }};
+  const historicalChart = {{ historical_chart|tojson }};
+  
+  // Create comparison chart
+  const compCtx = document.getElementById('comparisonChart').getContext('2d');
+  new Chart(compCtx, {
+    type: 'bar',
+    data: comparisonChart,
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      scales: {
+        y: {
+          beginAtZero: true
+        }
+      }
+    }
+  });
+  
+  // Create percentage chart
+  const percentCtx = document.getElementById('percentageChart').getContext('2d');
+  new Chart(percentCtx, {
+    type: 'bar',
+    data: percentageChart,
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      scales: {
+        y: {
+          beginAtZero: true,
+          max: 100
+        }
+      },
+      plugins: {
+        annotation: {
+          annotations: {
+            line1: {
+              type: 'line',
+              yMin: 100,
+              yMax: 100,
+              borderColor: 'rgb(255, 99, 132)',
+              borderWidth: 2,
+              label: {
+                content: 'Budget Limit',
+                enabled: true
+              }
+            }
+          }
+        }
+      }
+    }
+  });
+  
+  // Create historical chart
+  const histCtx = document.getElementById('historicalChart').getContext('2d');
+  new Chart(histCtx, {
+    type: 'line',
+    data: historicalChart,
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      scales: {
+        y: {
+          beginAtZero: true
+        }
+      }
+    }
+  });
+</script>
+{% endblock %}
