@@ -15,6 +15,7 @@ from flask import Flask, render_template, request, redirect, url_for, flash, jso
 from flask_login import LoginManager, login_user, login_required, logout_user, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
 from models import User, Expense, Salary, db, Category, Budget
+from bson import ObjectId
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 
@@ -643,7 +644,7 @@ def revoke_all_sessions():
     flash('All other sessions have been revoked', 'success')
     return redirect(url_for('security_settings'))
 
-@app.route('/security/change_password', methods=['POST'])
+@app.route('/change_password', methods=['POST'])
 @login_required
 def change_password():
     """Change user password"""
