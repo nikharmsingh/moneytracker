@@ -23,6 +23,23 @@ class User(UserMixin):
         self.email = user_data.get('email', '')
         self.password = user_data['password']
         self.registered_on = user_data.get('registered_on', None)
+        self.last_login = user_data.get('last_login', None)
+        self.login_attempts = user_data.get('login_attempts', 0)
+        self.account_locked_until = user_data.get('account_locked_until', None)
+        self.password_reset_token = user_data.get('password_reset_token', None)
+        self.password_reset_expires = user_data.get('password_reset_expires', None)
+        self.password_changed_on = user_data.get('password_changed_on', None)
+        
+        # 2FA fields
+        self.two_factor_enabled = user_data.get('two_factor_enabled', False)
+        self.two_factor_secret = user_data.get('two_factor_secret', None)
+        self.two_factor_backup_codes = user_data.get('two_factor_backup_codes', [])
+        
+        # Session management fields
+        self.active_sessions = user_data.get('active_sessions', [])
+        
+        # Security log fields
+        self.security_logs = user_data.get('security_logs', [])
 
     @staticmethod
     def get(user_id):
@@ -37,6 +54,14 @@ class User(UserMixin):
     @staticmethod
     def get_by_email(email):
         user_data = db.users.find_one({'email': email})
+        return User(user_data) if user_data else None
+    
+    @staticmethod
+    def get_by_reset_token(token):
+        user_data = db.users.find_one({
+            'password_reset_token': token,
+            'password_reset_expires': {'$gt': datetime.now()}
+        })
         return User(user_data) if user_data else None
 
     @staticmethod
@@ -59,7 +84,17 @@ class User(UserMixin):
             'username': username,
             'email': email,
             'password': password,
-            'registered_on': datetime.now()
+            'registered_on': datetime.now(),
+            'password_changed_on': datetime.now(),
+            'login_attempts': 0,
+            'two_factor_enabled': False,
+            'active_sessions': [],
+            'security_logs': [{
+                'action': 'account_created',
+                'timestamp': datetime.now(),
+                'ip_address': None,
+                'user_agent': None
+            }]
         }
         result = db.users.insert_one(user_data)
         user_data['_id'] = result.inserted_id
@@ -68,6 +103,250 @@ class User(UserMixin):
         User.create_default_categories(str(user_data['_id']))
         
         return User(user_data)
+    
+    def update_password(self, new_password):
+        """Update user's password and reset related security fields"""
+        db.users.update_one(
+            {'_id': ObjectId(self.id)},
+            {'$set': {
+                'password': new_password,
+                'password_changed_on': datetime.now(),
+                'password_reset_token': None,
+                'password_reset_expires': None,
+                'login_attempts': 0,
+                'account_locked_until': None
+            },
+            '$push': {
+                'security_logs': {
+                    'action': 'password_changed',
+                    'timestamp': datetime.now(),
+                    'ip_address': None,
+                    'user_agent': None
+                }
+            }}
+        )
+    
+    def generate_password_reset_token(self):
+        """Generate a password reset token valid for 24 hours"""
+        import secrets
+        token = secrets.token_urlsafe(32)
+        expires = datetime.now() + timedelta(hours=24)
+        
+        db.users.update_one(
+            {'_id': ObjectId(self.id)},
+            {'$set': {
+                'password_reset_token': token,
+                'password_reset_expires': expires
+            },
+            '$push': {
+                'security_logs': {
+                    'action': 'password_reset_requested',
+                    'timestamp': datetime.now(),
+                    'ip_address': None,
+                    'user_agent': None
+                }
+            }}
+        )
+        return token
+    
+    def record_login_attempt(self, success, ip_address=None, user_agent=None):
+        """Record a login attempt and handle account locking"""
+        if success:
+            # Successful login
+            db.users.update_one(
+                {'_id': ObjectId(self.id)},
+                {'$set': {
+                    'last_login': datetime.now(),
+                    'login_attempts': 0,
+                    'account_locked_until': None
+                },
+                '$push': {
+                    'security_logs': {
+                        'action': 'login_success',
+                        'timestamp': datetime.now(),
+                        'ip_address': ip_address,
+                        'user_agent': user_agent
+                    }
+                }}
+            )
+        else:
+            # Failed login
+            new_attempts = self.login_attempts + 1
+            update_data = {
+                'login_attempts': new_attempts,
+                'security_logs': {
+                    'action': 'login_failed',
+                    'timestamp': datetime.now(),
+                    'ip_address': ip_address,
+                    'user_agent': user_agent
+                }
+            }
+            
+            # Lock account after 5 failed attempts
+            if new_attempts >= 5:
+                locked_until = datetime.now() + timedelta(minutes=15)
+                update_data['account_locked_until'] = locked_until
+                update_data['security_logs']['action'] = 'account_locked'
+            
+            db.users.update_one(
+                {'_id': ObjectId(self.id)},
+                {'$set': {k: v for k, v in update_data.items() if k != 'security_logs'},
+                 '$push': {'security_logs': update_data['security_logs']}}
+            )
+    
+    def is_account_locked(self):
+        """Check if the account is currently locked"""
+        if not self.account_locked_until:
+            return False
+        return datetime.now() < self.account_locked_until
+    
+    def setup_2fa(self):
+        """Generate and store a new 2FA secret"""
+        import pyotp
+        secret = pyotp.random_base32()
+        backup_codes = []
+        
+        # Generate 10 backup codes
+        import secrets
+        for _ in range(10):
+            backup_codes.append(secrets.token_hex(4).upper())
+        
+        db.users.update_one(
+            {'_id': ObjectId(self.id)},
+            {'$set': {
+                'two_factor_secret': secret,
+                'two_factor_backup_codes': backup_codes
+            },
+            '$push': {
+                'security_logs': {
+                    'action': '2fa_setup_initiated',
+                    'timestamp': datetime.now(),
+                    'ip_address': None,
+                    'user_agent': None
+                }
+            }}
+        )
+        return secret, backup_codes
+    
+    def enable_2fa(self):
+        """Enable 2FA after setup and verification"""
+        db.users.update_one(
+            {'_id': ObjectId(self.id)},
+            {'$set': {'two_factor_enabled': True},
+            '$push': {
+                'security_logs': {
+                    'action': '2fa_enabled',
+                    'timestamp': datetime.now(),
+                    'ip_address': None,
+                    'user_agent': None
+                }
+            }}
+        )
+    
+    def disable_2fa(self):
+        """Disable 2FA"""
+        db.users.update_one(
+            {'_id': ObjectId(self.id)},
+            {'$set': {
+                'two_factor_enabled': False,
+                'two_factor_secret': None,
+                'two_factor_backup_codes': []
+            },
+            '$push': {
+                'security_logs': {
+                    'action': '2fa_disabled',
+                    'timestamp': datetime.now(),
+                    'ip_address': None,
+                    'user_agent': None
+                }
+            }}
+        )
+    
+    def verify_2fa_token(self, token):
+        """Verify a 2FA token or backup code"""
+        if not self.two_factor_secret:
+            return False
+            
+        # Check if it's a backup code
+        if token in self.two_factor_backup_codes:
+            # Remove the used backup code
+            db.users.update_one(
+                {'_id': ObjectId(self.id)},
+                {'$pull': {'two_factor_backup_codes': token},
+                '$push': {
+                    'security_logs': {
+                        'action': '2fa_backup_code_used',
+                        'timestamp': datetime.now(),
+                        'ip_address': None,
+                        'user_agent': None
+                    }
+                }}
+            )
+            return True
+            
+        # Verify TOTP
+        import pyotp
+        totp = pyotp.TOTP(self.two_factor_secret)
+        return totp.verify(token)
+    
+    def add_session(self, session_id, ip_address=None, user_agent=None):
+        """Add a new session for the user"""
+        session_data = {
+            'session_id': session_id,
+            'created_at': datetime.now(),
+            'last_active': datetime.now(),
+            'ip_address': ip_address,
+            'user_agent': user_agent
+        }
+        
+        db.users.update_one(
+            {'_id': ObjectId(self.id)},
+            {'$push': {
+                'active_sessions': session_data,
+                'security_logs': {
+                    'action': 'session_created',
+                    'timestamp': datetime.now(),
+                    'ip_address': ip_address,
+                    'user_agent': user_agent,
+                    'session_id': session_id
+                }
+            }}
+        )
+    
+    def remove_session(self, session_id):
+        """Remove a session for the user"""
+        db.users.update_one(
+            {'_id': ObjectId(self.id)},
+            {'$pull': {'active_sessions': {'session_id': session_id}},
+            '$push': {
+                'security_logs': {
+                    'action': 'session_terminated',
+                    'timestamp': datetime.now(),
+                    'session_id': session_id
+                }
+            }}
+        )
+    
+    def update_session_activity(self, session_id):
+        """Update the last active timestamp for a session"""
+        db.users.update_one(
+            {'_id': ObjectId(self.id), 'active_sessions.session_id': session_id},
+            {'$set': {'active_sessions.$.last_active': datetime.now()}}
+        )
+    
+    def get_security_logs(self, limit=50):
+        """Get the user's security logs"""
+        user_data = db.users.find_one({'_id': ObjectId(self.id)})
+        if not user_data or 'security_logs' not in user_data:
+            return []
+            
+        # Sort logs by timestamp (newest first) and limit
+        logs = sorted(
+            user_data['security_logs'], 
+            key=lambda x: x.get('timestamp', datetime.min), 
+            reverse=True
+        )
+        return logs[:limit]
 
 class Expense:
     def __init__(self, expense_data):

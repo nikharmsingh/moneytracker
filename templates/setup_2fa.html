@@ -1,0 +1,112 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-md-8 col-lg-6">
+    <div class="card shadow">
+      <div class="card-header bg-primary text-white">
+        <h3 class="mb-0">
+          <i class="bi bi-shield-lock me-2"></i>Set Up Two-Factor Authentication
+        </h3>
+      </div>
+      <div class="card-body">
+        <div class="alert alert-info">
+          <i class="bi bi-info-circle me-2"></i>Two-factor authentication adds an extra layer of security to your account by requiring a verification code in addition to your password when you log in.
+        </div>
+        
+        <div class="mb-4">
+          <h4 class="mb-3">Step 1: Install an Authenticator App</h4>
+          <p>If you haven't already, install an authenticator app on your mobile device:</p>
+          <ul class="list-group mb-3">
+            <li class="list-group-item d-flex align-items-center">
+              <i class="bi bi-google me-3 text-primary" style="font-size: 1.5rem;"></i>
+              <div>
+                <strong>Google Authenticator</strong>
+                <div class="small text-muted">Available for <a href="https://play.google.com/store/apps/details?id=com.google.android.apps.authenticator2" target="_blank">Android</a> and <a href="https://apps.apple.com/app/google-authenticator/id388497605" target="_blank">iOS</a></div>
+              </div>
+            </li>
+            <li class="list-group-item d-flex align-items-center">
+              <i class="bi bi-shield-check me-3 text-primary" style="font-size: 1.5rem;"></i>
+              <div>
+                <strong>Authy</strong>
+                <div class="small text-muted">Available for <a href="https://play.google.com/store/apps/details?id=com.authy.authy" target="_blank">Android</a> and <a href="https://apps.apple.com/app/authy/id494168017" target="_blank">iOS</a></div>
+              </div>
+            </li>
+            <li class="list-group-item d-flex align-items-center">
+              <i class="bi bi-microsoft me-3 text-primary" style="font-size: 1.5rem;"></i>
+              <div>
+                <strong>Microsoft Authenticator</strong>
+                <div class="small text-muted">Available for <a href="https://play.google.com/store/apps/details?id=com.azure.authenticator" target="_blank">Android</a> and <a href="https://apps.apple.com/app/microsoft-authenticator/id983156458" target="_blank">iOS</a></div>
+              </div>
+            </li>
+          </ul>
+        </div>
+        
+        <div class="mb-4">
+          <h4 class="mb-3">Step 2: Scan the QR Code</h4>
+          <p>Open your authenticator app and scan this QR code:</p>
+          
+          <div class="text-center mb-3">
+            <img src="data:image/png;base64,{{ qr_code }}" alt="QR Code" class="img-fluid" style="max-width: 250px;">
+          </div>
+          
+          <div class="alert alert-warning">
+            <strong>Can't scan the QR code?</strong>
+            <p class="mb-0">Manually enter this secret key in your authenticator app: <code>{{ secret }}</code></p>
+          </div>
+        </div>
+        
+        <div class="mb-4">
+          <h4 class="mb-3">Step 3: Verify Setup</h4>
+          <p>Enter the 6-digit verification code from your authenticator app to complete the setup:</p>
+          
+          <form method="POST" class="mb-3">
+            <div class="mb-3">
+              <label for="verification_code" class="form-label">Verification Code</label>
+              <input type="text" class="form-control" id="verification_code" name="verification_code" 
+                     required autofocus placeholder="Enter 6-digit code" pattern="[0-9]{6}" maxlength="6">
+            </div>
+            
+            <div class="d-grid">
+              <button type="submit" class="btn btn-primary">
+                <i class="bi bi-check-circle me-2"></i>Verify and Enable 2FA
+              </button>
+            </div>
+          </form>
+        </div>
+        
+        <div class="mb-4">
+          <h4 class="mb-3">Step 4: Save Your Backup Codes</h4>
+          <p>If you lose access to your authenticator app, you can use one of these backup codes to sign in. Each code can only be used once.</p>
+          
+          <div class="alert alert-danger">
+            <strong>Important:</strong> Store these codes in a safe place. They will only be shown once!
+          </div>
+          
+          <div class="backup-codes p-3 bg-light rounded mb-3">
+            <div class="row">
+              {% for code in backup_codes %}
+              <div class="col-6 col-md-4 mb-2">
+                <code>{{ code }}</code>
+              </div>
+              {% endfor %}
+            </div>
+          </div>
+          
+          <div class="d-grid">
+            <button class="btn btn-outline-primary" onclick="window.print()">
+              <i class="bi bi-printer me-2"></i>Print Backup Codes
+            </button>
+          </div>
+        </div>
+        
+        <div class="text-center mt-4">
+          <a href="{{ url_for('security_settings') }}" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left me-2"></i>Back to Security Settings
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

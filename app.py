@@ -4,15 +4,37 @@ import suppress_warnings
 import os
 import csv
 import calendar
-from io import StringIO
+import uuid
+import re
+import pyotp
+import qrcode
+import base64
+from io import StringIO, BytesIO
 from datetime import datetime, timedelta
 from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, make_response, session
 from flask_login import LoginManager, login_user, login_required, logout_user, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
 from models import User, Expense, Salary, db, Category, Budget
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', os.urandom(24))
+
+# Enhanced session security
+app.config['SESSION_COOKIE_SECURE'] = True  # Only send cookies over HTTPS
+app.config['SESSION_COOKIE_HTTPONLY'] = True  # Prevent JavaScript access to cookies
+app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'  # Restrict cookie sending to same-site requests
+app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(days=30)  # Session expiration
+
+# Rate limiting to prevent brute force attacks
+limiter = Limiter(
+    get_remote_address,
+    app=app,
+    default_limits=["200 per day", "50 per hour"],
+    storage_uri="memory://",
+    strategy="fixed-window"
+)
 
 # Make calendar module and built-in functions available to templates
 app.jinja_env.globals['calendar'] = calendar
@@ -72,25 +94,114 @@ def load_user(user_id):
 
 # Login Routes
 @app.route('/login', methods=['GET', 'POST'])
+@limiter.limit("10 per minute")
 def login():
     if current_user.is_authenticated:
         return redirect(url_for('index'))
     
+    # Check if user is in 2FA verification process
+    if 'awaiting_2fa' in session:
+        return redirect(url_for('verify_2fa'))
+    
     if request.method == 'POST':
         email = request.form['email']
         password = request.form['password']
+        remember_me = 'remember_me' in request.form
+        
         user = User.get_by_email(email)
         
-        if user and check_password_hash(user.password, password):
-            login_user(user)
+        # Record IP and user agent for security logs
+        ip_address = request.remote_addr
+        user_agent = request.headers.get('User-Agent')
+        
+        if not user:
+            flash('Invalid email or password', 'danger')
+            return render_template('login.html')
+        
+        # Check if account is locked
+        if user.is_account_locked():
+            flash('Account is temporarily locked due to too many failed login attempts. Please try again later.', 'danger')
+            return render_template('login.html')
+        
+        # Verify password
+        if check_password_hash(user.password, password):
+            # If 2FA is enabled, redirect to 2FA verification
+            if user.two_factor_enabled:
+                # Store user ID in session for 2FA verification
+                session['awaiting_2fa'] = True
+                session['user_id_2fa'] = user.id
+                session['remember_me'] = remember_me
+                
+                # Record successful password verification
+                user.record_login_attempt(True, ip_address, user_agent)
+                
+                return redirect(url_for('verify_2fa'))
+            
+            # If 2FA is not enabled, complete login
+            login_user(user, remember=remember_me)
+            
+            # Generate a unique session ID and store it
+            session_id = str(uuid.uuid4())
+            session['session_id'] = session_id
+            user.add_session(session_id, ip_address, user_agent)
+            
+            # Record successful login
+            user.record_login_attempt(True, ip_address, user_agent)
+            
             next_page = request.args.get('next')
             return redirect(next_page or url_for('index'))
         else:
+            # Record failed login attempt
+            user.record_login_attempt(False, ip_address, user_agent)
             flash('Invalid email or password', 'danger')
     
     return render_template('login.html')
 
+@app.route('/verify_2fa', methods=['GET', 'POST'])
+@limiter.limit("10 per minute")
+def verify_2fa():
+    # Ensure user has completed first step of login
+    if 'awaiting_2fa' not in session or 'user_id_2fa' not in session:
+        return redirect(url_for('login'))
+    
+    user = User.get(session['user_id_2fa'])
+    if not user:
+        session.pop('awaiting_2fa', None)
+        session.pop('user_id_2fa', None)
+        session.pop('remember_me', None)
+        return redirect(url_for('login'))
+    
+    if request.method == 'POST':
+        token = request.form['token']
+        
+        # Record IP and user agent for security logs
+        ip_address = request.remote_addr
+        user_agent = request.headers.get('User-Agent')
+        
+        # Verify the token
+        if user.verify_2fa_token(token):
+            # Complete login
+            login_user(user, remember=session.get('remember_me', False))
+            
+            # Generate a unique session ID and store it
+            session_id = str(uuid.uuid4())
+            session['session_id'] = session_id
+            user.add_session(session_id, ip_address, user_agent)
+            
+            # Clean up 2FA session data
+            session.pop('awaiting_2fa', None)
+            session.pop('user_id_2fa', None)
+            session.pop('remember_me', None)
+            
+            flash('Two-factor authentication successful!', 'success')
+            return redirect(url_for('index'))
+        else:
+            flash('Invalid verification code. Please try again.', 'danger')
+    
+    return render_template('verify_2fa.html')
+
 @app.route('/register', methods=['GET', 'POST'])
+@limiter.limit("10 per hour")
 def register():
     if current_user.is_authenticated:
         return redirect(url_for('index'))
@@ -101,25 +212,52 @@ def register():
         password = request.form['password']
         confirm_password = request.form['confirm_password']
         
+        # Validate password strength
+        if not is_password_strong(password):
+            flash('Password must be at least 8 characters long and include uppercase, lowercase, number, and special character', 'danger')
+            return render_template('register.html', username=username, email=email)
+        
         if password != confirm_password:
             flash('Passwords do not match', 'danger')
-            return redirect(url_for('register'))
+            return render_template('register.html', username=username, email=email)
         
         if User.get_by_username(username):
             flash('Username already exists', 'danger')
-            return redirect(url_for('register'))
+            return render_template('register.html', username='', email=email)
             
         if User.get_by_email(email):
             flash('Email already registered', 'danger')
-            return redirect(url_for('register'))
+            return render_template('register.html', username=username, email='')
+        
+        # Record IP and user agent for security logs
+        ip_address = request.remote_addr
+        user_agent = request.headers.get('User-Agent')
         
         hashed_password = generate_password_hash(password)
-        User.create(username, email, hashed_password)
+        user = User.create(username, email, hashed_password)
         
         flash('Registration successful! Please login.', 'success')
         return redirect(url_for('login'))
     
     return render_template('register.html')
+
+def is_password_strong(password):
+    """Check if password meets strength requirements"""
+    # At least 8 characters
+    if len(password) < 8:
+        return False
+    
+    # Check for at least one uppercase, lowercase, digit, and special character
+    if not re.search(r'[A-Z]', password):
+        return False
+    if not re.search(r'[a-z]', password):
+        return False
+    if not re.search(r'[0-9]', password):
+        return False
+    if not re.search(r'[!@#$%^&*(),.?":{}|<>]', password):
+        return False
+    
+    return True
 
 @app.route('/profile')
 @login_required
@@ -377,8 +515,223 @@ def budget_overview():
 @app.route('/logout')
 @login_required
 def logout():
+    # Get the current session ID
+    session_id = session.get('session_id')
+    
+    # Remove the session from the user's active sessions
+    if session_id:
+        current_user.remove_session(session_id)
+    
+    # Log the user out
     logout_user()
+    
+    # Clear the session
+    session.clear()
+    
+    flash('You have been logged out successfully', 'success')
     return redirect(url_for('login'))
+
+# Security Routes
+@app.route('/security', methods=['GET'])
+@login_required
+def security_settings():
+    """Security settings page"""
+    # Get user's active sessions
+    user_data = db.users.find_one({'_id': ObjectId(current_user.id)})
+    active_sessions = user_data.get('active_sessions', [])
+    
+    # Get security logs
+    security_logs = current_user.get_security_logs(limit=20)
+    
+    return render_template('security.html', 
+                          active_sessions=active_sessions,
+                          security_logs=security_logs,
+                          two_factor_enabled=current_user.two_factor_enabled)
+
+@app.route('/security/setup_2fa', methods=['GET', 'POST'])
+@login_required
+def setup_2fa():
+    """Setup two-factor authentication"""
+    if request.method == 'POST':
+        verification_code = request.form.get('verification_code')
+        
+        # Verify the code
+        if current_user.verify_2fa_token(verification_code):
+            # Enable 2FA
+            current_user.enable_2fa()
+            flash('Two-factor authentication has been enabled for your account', 'success')
+            return redirect(url_for('security_settings'))
+        else:
+            flash('Invalid verification code. Please try again.', 'danger')
+    
+    # Generate new 2FA secret if not already set up
+    if not current_user.two_factor_secret:
+        secret, backup_codes = current_user.setup_2fa()
+    else:
+        secret = current_user.two_factor_secret
+        backup_codes = current_user.two_factor_backup_codes
+    
+    # Generate QR code
+    totp_uri = pyotp.totp.TOTP(secret).provisioning_uri(
+        name=current_user.email,
+        issuer_name="Money Tracker"
+    )
+    
+    qr = qrcode.QRCode(
+        version=1,
+        error_correction=qrcode.constants.ERROR_CORRECT_L,
+        box_size=10,
+        border=4,
+    )
+    qr.add_data(totp_uri)
+    qr.make(fit=True)
+    
+    img = qr.make_image(fill_color="black", back_color="white")
+    buffered = BytesIO()
+    img.save(buffered)
+    img_str = base64.b64encode(buffered.getvalue()).decode()
+    
+    return render_template('setup_2fa.html', 
+                          secret=secret,
+                          qr_code=img_str,
+                          backup_codes=backup_codes)
+
+@app.route('/security/disable_2fa', methods=['POST'])
+@login_required
+def disable_2fa():
+    """Disable two-factor authentication"""
+    password = request.form.get('password')
+    
+    # Verify password
+    if check_password_hash(current_user.password, password):
+        current_user.disable_2fa()
+        flash('Two-factor authentication has been disabled', 'success')
+    else:
+        flash('Incorrect password', 'danger')
+    
+    return redirect(url_for('security_settings'))
+
+@app.route('/security/sessions/revoke/<session_id>', methods=['POST'])
+@login_required
+def revoke_session(session_id):
+    """Revoke a specific session"""
+    # Don't allow revoking the current session
+    if session_id == session.get('session_id'):
+        flash('You cannot revoke your current session', 'danger')
+        return redirect(url_for('security_settings'))
+    
+    current_user.remove_session(session_id)
+    flash('Session has been revoked', 'success')
+    return redirect(url_for('security_settings'))
+
+@app.route('/security/sessions/revoke_all', methods=['POST'])
+@login_required
+def revoke_all_sessions():
+    """Revoke all sessions except the current one"""
+    current_session_id = session.get('session_id')
+    
+    # Get all user sessions
+    user_data = db.users.find_one({'_id': ObjectId(current_user.id)})
+    active_sessions = user_data.get('active_sessions', [])
+    
+    # Keep only the current session
+    db.users.update_one(
+        {'_id': ObjectId(current_user.id)},
+        {'$set': {'active_sessions': [s for s in active_sessions if s.get('session_id') == current_session_id]}}
+    )
+    
+    flash('All other sessions have been revoked', 'success')
+    return redirect(url_for('security_settings'))
+
+@app.route('/security/change_password', methods=['POST'])
+@login_required
+def change_password():
+    """Change user password"""
+    current_password = request.form.get('current_password')
+    new_password = request.form.get('new_password')
+    confirm_password = request.form.get('confirm_password')
+    
+    # Verify current password
+    if not check_password_hash(current_user.password, current_password):
+        flash('Current password is incorrect', 'danger')
+        return redirect(url_for('security_settings'))
+    
+    # Validate new password
+    if not is_password_strong(new_password):
+        flash('Password must be at least 8 characters long and include uppercase, lowercase, number, and special character', 'danger')
+        return redirect(url_for('security_settings'))
+    
+    # Confirm passwords match
+    if new_password != confirm_password:
+        flash('New passwords do not match', 'danger')
+        return redirect(url_for('security_settings'))
+    
+    # Update password
+    hashed_password = generate_password_hash(new_password)
+    current_user.update_password(hashed_password)
+    
+    flash('Your password has been updated successfully', 'success')
+    return redirect(url_for('security_settings'))
+
+@app.route('/reset_password', methods=['GET', 'POST'])
+def reset_password_request():
+    """Request a password reset"""
+    if current_user.is_authenticated:
+        return redirect(url_for('index'))
+    
+    if request.method == 'POST':
+        email = request.form.get('email')
+        user = User.get_by_email(email)
+        
+        if user:
+            # Generate a reset token
+            token = user.generate_password_reset_token()
+            
+            # In a real application, you would send an email with the reset link
+            # For this implementation, we'll just show the token
+            reset_url = url_for('reset_password_token', token=token, _external=True)
+            flash(f'Password reset link: {reset_url}', 'info')
+            
+            # You would normally redirect to a "check your email" page
+            return redirect(url_for('login'))
+        else:
+            # Don't reveal that the user doesn't exist
+            flash('If your email is registered, you will receive a password reset link', 'info')
+    
+    return render_template('reset_password_request.html')
+
+@app.route('/reset_password/<token>', methods=['GET', 'POST'])
+def reset_password_token(token):
+    """Reset password with token"""
+    if current_user.is_authenticated:
+        return redirect(url_for('index'))
+    
+    user = User.get_by_reset_token(token)
+    
+    if not user:
+        flash('Invalid or expired reset link', 'danger')
+        return redirect(url_for('reset_password_request'))
+    
+    if request.method == 'POST':
+        password = request.form.get('password')
+        confirm_password = request.form.get('confirm_password')
+        
+        if not is_password_strong(password):
+            flash('Password must be at least 8 characters long and include uppercase, lowercase, number, and special character', 'danger')
+            return render_template('reset_password.html', token=token)
+        
+        if password != confirm_password:
+            flash('Passwords do not match', 'danger')
+            return render_template('reset_password.html', token=token)
+        
+        # Update the password
+        hashed_password = generate_password_hash(password)
+        user.update_password(hashed_password)
+        
+        flash('Your password has been reset. You can now log in with your new password.', 'success')
+        return redirect(url_for('login'))
+    
+    return render_template('reset_password.html', token=token)
 
 # Recurring Transactions Routes
 @app.route('/recurring_transactions')

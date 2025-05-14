@@ -2,7 +2,41 @@
 
 This document tracks the version history of the Money Tracker application, detailing the features, improvements, and bug fixes introduced in each release.
 
-## Version 2.0.0 (Current)
+## Version 2.1.0 (Current)
+
+**Release Date:** July 2023
+
+### Major Features
+
+- **Enhanced Security Framework**
+  - Two-factor authentication (2FA) with TOTP
+  - Session management and tracking
+  - Security logs for account activity monitoring
+  - Account lockout protection after multiple failed attempts
+  - Improved password policies and validation
+  - Password reset functionality with secure tokens
+  - Backup codes for 2FA recovery
+
+### Improvements
+
+- Enhanced login process with "Remember Me" functionality
+- Secure session handling with improved cookie security
+- Rate limiting to prevent brute force attacks
+- Comprehensive security settings dashboard
+- Visual security status indicators
+- Improved user feedback for security events
+
+### Technical Changes
+
+- Implemented TOTP-based two-factor authentication
+- Added session tracking and management
+- Enhanced password hashing and validation
+- Implemented rate limiting for sensitive routes
+- Added security logging and monitoring
+- Improved CSRF protection
+- Enhanced cookie security settings
+
+## Version 2.0.0
 
 **Release Date:** June 2023
 
@@ -155,7 +189,7 @@ This document tracks the version history of the Money Tracker application, detai
 
 ## Future Roadmap
 
-### Planned for Version 2.1.0
+### Planned for Version 2.2.0
 
 - Dark mode support
 - Enhanced data visualization
@@ -170,6 +204,7 @@ This document tracks the version history of the Money Tracker application, detai
 - Receipt scanning and attachment
 - Integration with financial institutions
 - Enhanced data import/export options
+- Biometric authentication (fingerprint/face recognition)
 
 ### Planned for Version 3.0.0
 
@@ -177,4 +212,5 @@ This document tracks the version history of the Money Tracker application, detai
 - Advanced financial insights with AI
 - Investment tracking and analysis
 - Family/group expense sharing
-- Advanced security features (2FA, biometric authentication)
+- End-to-end encryption for sensitive data
+- Advanced security audit and compliance features
