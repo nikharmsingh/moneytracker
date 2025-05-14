@@ -18,8 +18,39 @@ from models import User, Expense, Salary, db, Category, Budget
 from bson import ObjectId
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
+import re
 
 app = Flask(__name__)
+
+# Initialize Flask-Limiter
+limiter = Limiter(
+    get_remote_address,
+    app=app,
+    default_limits=["200 per day", "50 per hour"],
+    storage_uri="memory://",
+    strategy="fixed-window"
+)
+
+# Password strength validation function
+def is_password_strong(password):
+    """
+    Check if a password meets the strength requirements:
+    - At least 8 characters long
+    - Contains at least one uppercase letter
+    - Contains at least one lowercase letter
+    - Contains at least one digit
+    - Contains at least one special character
+    """
+    if not password or len(password) < 8:
+        return False
+    
+    # Check for uppercase, lowercase, digit, and special character
+    has_uppercase = bool(re.search(r'[A-Z]', password))
+    has_lowercase = bool(re.search(r'[a-z]', password))
+    has_digit = bool(re.search(r'\d', password))
+    has_special = bool(re.search(r'[!@#$%^&*(),.?":{}|<>]', password))
+    
+    return has_uppercase and has_lowercase and has_digit and has_special
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', os.urandom(24))
 
 # Enhanced session security
@@ -675,6 +706,7 @@ def change_password():
     return redirect(url_for('security_settings'))
 
 @app.route('/reset_password', methods=['GET', 'POST'])
+@limiter.limit("5 per hour")
 def reset_password_request():
     """Request a password reset"""
     if current_user.is_authenticated:
@@ -702,6 +734,7 @@ def reset_password_request():
     return render_template('reset_password_request.html')
 
 @app.route('/reset_password/<token>', methods=['GET', 'POST'])
+@limiter.limit("10 per hour")
 def reset_password_token(token):
     """Reset password with token"""
     if current_user.is_authenticated:

@@ -10,6 +10,7 @@ This page answers common questions about the Money Tracker application.
 - [Account Management](#account-management)
 - [Transactions and Categories](#transactions-and-categories)
 - [Data and Privacy](#data-and-privacy)
+- [Security Features](#security-features)
 - [Technical Questions](#technical-questions)
 - [Troubleshooting](#troubleshooting)
 
@@ -42,7 +43,20 @@ Currently, Money Tracker does not have built-in support for multiple currencies.
 
 ### How do I reset my password?
 
-Currently, Money Tracker does not have an automated password reset feature. This feature is planned for future releases. If you forget your password, please contact the administrator of your deployment.
+If you forget your password:
+
+1. Click "Forgot password?" on the login page
+2. Enter your email address
+3. Check your email for a password reset link (in production, an actual email would be sent)
+4. Click the link and create a new password
+5. The reset link is valid for 24 hours
+
+If you know your current password and want to change it:
+
+1. Go to Security Settings
+2. Click the "Password" tab
+3. Enter your current password and your new password
+4. Click "Change Password"
 
 ### Can I delete my account?
 
@@ -50,7 +64,12 @@ Account deletion is not currently available through the user interface. This fea
 
 ### Is my password stored securely?
 
-Yes, Money Tracker uses Werkzeug's security functions to hash passwords before storing them in the database. The original password is never stored, only a secure hash.
+Yes, Money Tracker uses Werkzeug's security functions to hash passwords before storing them in the database. The original password is never stored, only a secure hash. Additionally:
+
+- Strong password requirements are enforced (minimum length, complexity)
+- Account lockout occurs after multiple failed login attempts
+- Two-factor authentication adds an extra layer of security
+- Password changes require verification of your current password
 
 ## Transactions and Categories
 
@@ -90,7 +109,17 @@ No, default (global) categories cannot be deleted. These categories are availabl
 
 ### Is my financial data secure?
 
-Money Tracker uses secure authentication and stores passwords as hashed values. Your data is stored in MongoDB with access controls. The security of your deployment depends on how you configure your hosting environment and database.
+Money Tracker implements multiple layers of security to protect your data:
+
+- Secure authentication with password hashing
+- Two-factor authentication (2FA) for additional account security
+- Session management with the ability to view and revoke active sessions
+- Account lockout protection after multiple failed login attempts
+- Security logging to track account activity
+- Rate limiting to prevent brute force attacks
+- Strong password policies
+
+The overall security of your deployment also depends on how you configure your hosting environment and database.
 
 ### Can other users see my transactions?
 
@@ -104,6 +133,66 @@ You can export your transactions as CSV files using the "Export as CSV" feature 
 
 No, Money Tracker does not share your data with any third parties. The application runs entirely on your own infrastructure, and data remains within your control.
 
+## Security Features
+
+### What is two-factor authentication (2FA)?
+
+Two-factor authentication adds an extra layer of security to your account by requiring a verification code in addition to your password when you log in. This means that even if someone knows your password, they can't access your account without also having access to your authenticator app.
+
+### How do I set up two-factor authentication?
+
+1. Go to Security Settings
+2. In the "Two-Factor Authentication" tab, click "Set Up Two-Factor Authentication"
+3. Install an authenticator app on your mobile device (Google Authenticator, Authy, or Microsoft Authenticator)
+4. Scan the QR code with your authenticator app
+5. Enter the 6-digit verification code from your app to complete setup
+6. Save your backup codes in a secure location
+
+### What if I lose access to my authenticator app?
+
+If you lose access to your authenticator app (e.g., you get a new phone), you can use one of your backup codes to log in. These codes are provided when you set up 2FA, and each code can only be used once. It's important to store these codes in a secure location.
+
+### Can I disable two-factor authentication?
+
+Yes, you can disable 2FA at any time:
+
+1. Go to Security Settings
+2. In the "Two-Factor Authentication" tab, enter your password
+3. Click "Disable Two-Factor Authentication"
+
+### What are active sessions?
+
+Active sessions represent all the devices and browsers currently logged into your account. Each time you log in from a new device or browser, a new session is created. The session information includes:
+
+- Device and browser information
+- IP address
+- Last activity time
+
+### How do I revoke a session?
+
+If you notice an unfamiliar session or want to log out from a device:
+
+1. Go to Security Settings
+2. Click the "Active Sessions" tab
+3. Find the session you want to revoke
+4. Click the "Revoke" button next to it
+
+### What information is in the security logs?
+
+Security logs track important security events related to your account, including:
+
+- Successful and failed login attempts
+- Password changes
+- Two-factor authentication setup or changes
+- Session creation and termination
+- Account lockouts
+
+These logs help you monitor your account activity and detect potential unauthorized access.
+
+### What happens if I enter my password incorrectly multiple times?
+
+After 5 failed login attempts, your account will be temporarily locked for 15 minutes as a security measure to prevent brute force attacks. You'll need to wait until the lockout period expires before trying again.
+
 ## Technical Questions
 
 ### What technologies does Money Tracker use?
@@ -113,8 +202,10 @@ Money Tracker is built with:
 - **Backend**: Python, Flask
 - **Database**: MongoDB
 - **Frontend**: HTML, CSS, Bootstrap 5
-- **Authentication**: Flask-Login
+- **Authentication**: Flask-Login, PyOTP (for 2FA)
+- **Security**: Flask-Limiter, TOTP-based 2FA, Session Management
 - **Data Visualization**: Chart.js
+- **QR Code Generation**: qrcode, Pillow
 
 ### Can I import data from other financial apps?
 
@@ -136,10 +227,17 @@ If you're having trouble logging in:
 
 1. Ensure you're using the correct email address
 2. Check that your password is correct
-3. Clear your browser cookies and cache
-4. Try using a different browser
+3. If you have 2FA enabled, make sure you're entering the correct verification code from your authenticator app
+4. Your account may be temporarily locked if you've had 5 failed login attempts (wait 15 minutes and try again)
+5. Clear your browser cookies and cache
+6. Try using a different browser
 
-If you still can't log in, you may need to reset your password through your deployment administrator.
+If you've forgotten your password:
+
+1. Click "Forgot password?" on the login page
+2. Follow the instructions to reset your password
+
+If you've lost access to your authenticator app and don't have your backup codes, contact your administrator for assistance.
 
 ### My transactions aren't showing up in the dashboard
 

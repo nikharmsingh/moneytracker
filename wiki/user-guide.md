@@ -14,6 +14,7 @@ This guide will help you get started with Money Tracker and make the most of its
 - [Salary Tracking](#salary-tracking)
 - [Data Filtering and Export](#data-filtering-and-export)
 - [User Profile](#user-profile)
+- [Security Features](#security-features)
 
 ## Installation
 
@@ -78,14 +79,24 @@ Before installing Money Tracker, ensure you have:
 1. **Registration**:
 
    - Navigate to the registration page by clicking "Register" on the home page
-   - Enter a unique username, email address, and password
+   - Enter a unique username, email address, and a strong password
+     - Passwords must be at least 8 characters long and include uppercase letters, lowercase letters, numbers, and special characters
    - Click "Register" to create your account
    - Default expense categories will be automatically created for you
 
 2. **Login**:
+
    - Enter your email and password on the login page
+   - Check "Remember Me" for convenience on trusted devices
    - Click "Login" to access your dashboard
-   - Use the "Remember Me" option for convenience on trusted devices
+   - If two-factor authentication is enabled, you'll be prompted to enter a verification code
+   - After 5 failed login attempts, your account will be temporarily locked for security reasons
+
+3. **Password Reset**:
+   - If you forget your password, click "Forgot password?" on the login page
+   - Enter your email address to receive a password reset link
+   - Click the link in the email to create a new password
+   - The reset link is valid for 24 hours
 
 ## Dashboard Overview
 
@@ -204,3 +215,85 @@ The dashboard provides a comprehensive view of your financial status:
 - View account statistics
 - See total transactions, credits, debits, and balance
 - View current month's spending and average daily spend
+- Access security settings via the "Security Settings" button
+
+## Security Features
+
+Money Tracker includes comprehensive security features to protect your account and financial data.
+
+### Security Settings
+
+To access security settings:
+
+1. Click on your username in the navigation bar and select "Profile"
+2. Click the "Security Settings" button on your profile page
+3. Or click "Security Settings" directly from the main navigation menu
+
+### Two-Factor Authentication (2FA)
+
+Two-factor authentication adds an extra layer of security by requiring a verification code in addition to your password when logging in.
+
+#### Setting Up 2FA
+
+1. Navigate to Security Settings
+2. In the "Two-Factor Authentication" tab, click "Set Up Two-Factor Authentication"
+3. Install an authenticator app on your mobile device if you don't already have one:
+   - Google Authenticator ([Android](https://play.google.com/store/apps/details?id=com.google.android.apps.authenticator2), [iOS](https://apps.apple.com/app/google-authenticator/id388497605))
+   - Authy ([Android](https://play.google.com/store/apps/details?id=com.authy.authy), [iOS](https://apps.apple.com/app/authy/id494168017))
+   - Microsoft Authenticator ([Android](https://play.google.com/store/apps/details?id=com.azure.authenticator), [iOS](https://apps.apple.com/app/microsoft-authenticator/id983156458))
+4. Scan the QR code with your authenticator app
+5. Enter the 6-digit verification code from your app to complete setup
+6. Save your backup codes in a secure location (these will only be shown once)
+
+#### Using 2FA
+
+1. When logging in, after entering your password, you'll be prompted for a verification code
+2. Open your authenticator app and enter the 6-digit code
+3. If you've lost access to your authenticator app, you can use one of your backup codes
+
+#### Disabling 2FA
+
+1. Navigate to Security Settings
+2. In the "Two-Factor Authentication" tab, enter your password
+3. Click "Disable Two-Factor Authentication"
+
+### Session Management
+
+Money Tracker allows you to view and manage all your active login sessions.
+
+#### Viewing Active Sessions
+
+1. Navigate to Security Settings
+2. Click the "Active Sessions" tab
+3. View all devices currently logged into your account
+
+#### Revoking Sessions
+
+1. To revoke a specific session, click the "Revoke" button next to it
+2. To revoke all sessions except your current one, click "Revoke All Other Sessions"
+3. After revoking a session, that device will be logged out immediately
+
+### Security Logs
+
+Security logs help you monitor account activity and detect unauthorized access.
+
+1. Navigate to Security Settings
+2. Click the "Security Logs" tab
+3. View a chronological list of security events, including:
+   - Successful and failed login attempts
+   - Password changes
+   - Two-factor authentication setup or changes
+   - Session creation and termination
+   - Account lockouts
+
+### Password Management
+
+#### Changing Your Password
+
+1. Navigate to Security Settings
+2. Click the "Password" tab
+3. Enter your current password
+4. Enter and confirm your new password
+   - Must be at least 8 characters long
+   - Must include uppercase letters, lowercase letters, numbers, and special characters
+5. Click "Change Password"

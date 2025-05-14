@@ -18,7 +18,13 @@ Money Tracker is a Flask-based web application designed to help users manage the
 
 ### Key Features
 
-- **User Authentication**: Secure login and registration system
+- **Enhanced Security Framework**:
+  - Two-factor authentication (2FA)
+  - Session management and tracking
+  - Security logs and monitoring
+  - Account lockout protection
+  - Strong password policies
+  - Password reset functionality
 - **Transaction Management**: Track both expenses (debits) and income (credits)
 - **Financial Dashboard**: Visualize spending patterns and financial summaries
 - **Category Management**: Organize transactions with customizable categories
@@ -44,6 +50,9 @@ If you're looking to contribute to Money Tracker or understand its architecture:
 
 ## Recent Updates
 
+- Added comprehensive security features documentation
+- Detailed guides for two-factor authentication setup and usage
+- Documentation for session management and security logs
 - Initial Wiki creation
 - Comprehensive documentation of features and functionality
 - Technical architecture documentation

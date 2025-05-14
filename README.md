@@ -6,10 +6,16 @@ A Flask-based web application for tracking personal finances, expenses, and inco
 
 ## Features
 
-- **User Authentication**
+- **Enhanced Security Framework**
 
-  - Secure login and registration system
-  - User-specific data isolation
+  - Two-factor authentication (2FA) with TOTP
+  - Session management and tracking
+  - Security logs for account activity monitoring
+  - Account lockout protection after multiple failed attempts
+  - Strong password policies and validation
+  - Password reset functionality with secure tokens
+  - Backup codes for 2FA recovery
+  - Rate limiting to prevent brute force attacks
 
 - **Transaction Management**
 
@@ -53,8 +59,10 @@ A Flask-based web application for tracking personal finances, expenses, and inco
 - **Backend**: Python, Flask
 - **Database**: MongoDB
 - **Frontend**: HTML, CSS, Bootstrap 5
-- **Authentication**: Flask-Login
+- **Authentication**: Flask-Login, PyOTP (for 2FA)
+- **Security**: Flask-Limiter, TOTP-based 2FA, Session Management
 - **Data Visualization**: Chart.js
+- **QR Code Generation**: qrcode, Pillow
 
 ## Prerequisites
 
@@ -132,11 +140,15 @@ money-tracker/
 
 ## Usage
 
-1. **Registration & Login**
+1. **Registration, Login & Security**
 
-   - Create a new account with a unique username
-   - Log in with your credentials
-   - Automatic redirection to dashboard after login
+   - Create a new account with a unique username and strong password
+   - Log in with your credentials (with optional "Remember Me")
+   - Set up two-factor authentication for enhanced security
+   - Manage active sessions and revoke them if needed
+   - View security logs for account activity monitoring
+   - Reset password securely if forgotten
+   - Change password with current password verification
 
 2. **Dashboard Overview**
 
