@@ -58,6 +58,13 @@ Add the following environment variables in the "Environment" tab:
 - `FLASK_ENV`: `production`
 - `SECRET_KEY`: Generate a secure random string
 - `MONGODB_URI`: Your MongoDB connection string
+- Email configuration (for password reset functionality):
+  - `MAIL_SERVER`: `smtp.gmail.com` (or your email provider's SMTP server)
+  - `MAIL_PORT`: `587` (or the appropriate port for your email provider)
+  - `MAIL_USE_TLS`: `True`
+  - `MAIL_USERNAME`: Your email address
+  - `MAIL_PASSWORD`: Your email password or app password
+  - `MAIL_DEFAULT_SENDER`: Your email address or a custom sender address
 
 ### Step 5: Deploy
 
@@ -75,12 +82,18 @@ Add the following environment variables in the "Environment" tab:
 
 Money Tracker requires the following environment variables:
 
-| Variable      | Description                              | Example                                                             |
-| ------------- | ---------------------------------------- | ------------------------------------------------------------------- |
-| `FLASK_APP`   | The main application file                | `app.py`                                                            |
-| `FLASK_ENV`   | The environment (development/production) | `production`                                                        |
-| `SECRET_KEY`  | Secret key for session encryption        | `your-secure-random-string`                                         |
-| `MONGODB_URI` | MongoDB connection string                | `mongodb+srv://<username>:<password>@cluster.mongodb.net/<table_name>` |
+| Variable              | Description                              | Example                                                                |
+| --------------------- | ---------------------------------------- | ---------------------------------------------------------------------- |
+| `FLASK_APP`           | The main application file                | `app.py`                                                               |
+| `FLASK_ENV`           | The environment (development/production) | `production`                                                           |
+| `SECRET_KEY`          | Secret key for session encryption        | `your-secure-random-string`                                            |
+| `MONGODB_URI`         | MongoDB connection string                | `mongodb+srv://<username>:<password>@cluster.mongodb.net/<table_name>` |
+| `MAIL_SERVER`         | SMTP server for sending emails           | `smtp.gmail.com`                                                       |
+| `MAIL_PORT`           | SMTP port                                | `587`                                                                  |
+| `MAIL_USE_TLS`        | Whether to use TLS encryption            | `True`                                                                 |
+| `MAIL_USERNAME`       | Email username/address                   | `your-email@gmail.com`                                                 |
+| `MAIL_PASSWORD`       | Email password or app password           | `your-app-password`                                                    |
+| `MAIL_DEFAULT_SENDER` | Default sender email address             | `noreply@yourdomain.com` or your email address                         |
 
 ### Generating a Secure Secret Key
 
@@ -95,6 +108,32 @@ random_bytes = os.urandom(24)
 secret_key = base64.b64encode(random_bytes).decode('utf-8')
 print(secret_key)
 ```
+
+### Setting Up Gmail for Password Reset
+
+If you're using Gmail as your email provider for password reset functionality, you'll need to set up an App Password:
+
+1. **Enable 2-Step Verification**:
+
+   - Go to your Google Account settings (https://myaccount.google.com/)
+   - Select "Security"
+   - Under "Signing in to Google," enable "2-Step Verification" if not already enabled
+
+2. **Create an App Password**:
+
+   - After enabling 2-Step Verification, go back to the Security page
+   - Select "App passwords" (under "Signing in to Google")
+   - Select "Mail" for the app and "Other (Custom name)" for the device
+   - Enter "Money Tracker" as the name
+   - Click "Generate"
+   - Google will display a 16-character password - use this as your `MAIL_PASSWORD`
+
+3. **Update Environment Variables**:
+   - Set `MAIL_USERNAME` to your full Gmail address
+   - Set `MAIL_PASSWORD` to the 16-character App Password you generated
+   - Set `MAIL_DEFAULT_SENDER` to your Gmail address or a custom name with your email (e.g., "Money Tracker <your-email@gmail.com>")
+
+**Note**: Never use your regular Gmail password in the application. Always use an App Password for security reasons.
 
 ## Database Setup
 

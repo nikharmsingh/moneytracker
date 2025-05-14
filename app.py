@@ -18,6 +18,7 @@ from models import User, Expense, Salary, db, Category, Budget
 from bson import ObjectId
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
+from flask_mail import Mail, Message
 import re
 
 app = Flask(__name__)
@@ -59,6 +60,15 @@ app.config['SESSION_COOKIE_HTTPONLY'] = True  # Prevent JavaScript access to coo
 app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'  # Restrict cookie sending to same-site requests
 app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(days=30)  # Session expiration
 
+# Configure Flask-Mail
+app.config['MAIL_SERVER'] = os.environ.get('MAIL_SERVER', 'smtp.gmail.com')
+app.config['MAIL_PORT'] = int(os.environ.get('MAIL_PORT', 587))
+app.config['MAIL_USE_TLS'] = os.environ.get('MAIL_USE_TLS', 'True').lower() in ['true', 'yes', '1']
+app.config['MAIL_USERNAME'] = os.environ.get('MAIL_USERNAME', '')
+app.config['MAIL_PASSWORD'] = os.environ.get('MAIL_PASSWORD', '')
+app.config['MAIL_DEFAULT_SENDER'] = os.environ.get('MAIL_DEFAULT_SENDER', 'noreply@moneytracker.com')
+mail = Mail(app)
+
 # Rate limiting to prevent brute force attacks
 limiter = Limiter(
     get_remote_address,
@@ -94,6 +104,25 @@ def zip_lists(a, b):
 @app.template_filter('sum')
 def sum_list(value):
     return sum(value)
+        
+# Function to send password reset email
+def send_password_reset_email(user, token):
+    """Send password reset email to user"""
+    reset_url = url_for('reset_password_token', token=token, _external=True)
+    
+    msg = Message(
+        subject="Money Tracker - Password Reset",
+        recipients=[user.email],
+        html=render_template('email/reset_password.html', user=user, reset_url=reset_url),
+        sender=app.config['MAIL_DEFAULT_SENDER']
+    )
+    
+    try:
+        mail.send(msg)
+        return True
+    except Exception as e:
+        print(f"Error sending email: {e}")
+        return False
         
 # Add custom Jinja2 filter for date formatting
 @app.template_filter('format_date')
@@ -720,13 +749,17 @@ def reset_password_request():
             # Generate a reset token
             token = user.generate_password_reset_token()
             
-            # In a real application, you would send an email with the reset link
-            # For this implementation, we'll just show the token
-            reset_url = url_for('reset_password_token', token=token, _external=True)
-            flash(f'Password reset link: {reset_url}', 'info')
+            # Send the password reset email
+            email_sent = send_password_reset_email(user, token)
             
-            # You would normally redirect to a "check your email" page
-            return redirect(url_for('login'))
+            if email_sent:
+                flash('A password reset link has been sent to your email address.', 'info')
+                return redirect(url_for('login'))
+            else:
+                # Fallback if email sending fails
+                reset_url = url_for('reset_password_token', token=token, _external=True)
+                flash(f'Email sending failed. Use this link to reset your password: {reset_url}', 'warning')
+                return render_template('reset_password_link.html', reset_url=reset_url)
         else:
             # Don't reveal that the user doesn't exist
             flash('If your email is registered, you will receive a password reset link', 'info')

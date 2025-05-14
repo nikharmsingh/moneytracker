@@ -47,9 +47,17 @@ If you forget your password:
 
 1. Click "Forgot password?" on the login page
 2. Enter your email address
-3. Check your email for a password reset link (in production, an actual email would be sent)
-4. Click the link and create a new password
-5. The reset link is valid for 24 hours
+3. Check your email for a password reset link
+4. Click the link in the email to open the password reset page
+5. Enter and confirm your new password
+6. Click "Reset Password" to save your new password
+7. The reset link is valid for 24 hours
+
+Note: If you don't receive the password reset email:
+
+- Check your spam/junk folder
+- Verify that the email address you entered is correct
+- Contact your administrator to ensure the email service is properly configured
 
 If you know your current password and want to change it:
 
