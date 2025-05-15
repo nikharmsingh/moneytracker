@@ -10,45 +10,42 @@
         </h3>
       </div>
       <div class="card-body">
+        <!-- Nav tabs -->
         <ul class="nav nav-tabs mb-4" id="securityTabs" role="tablist">
           <li class="nav-item" role="presentation">
-            <button class="nav-link {% if active_tab == 'two-factor' or not active_tab %}active{% endif %}" 
+            <button class="nav-link {% if active_tab == 'two-factor' %}active{% endif %}" 
                     id="two-factor-tab" data-bs-toggle="tab" data-bs-target="#two-factor" 
-                    type="button" role="tab" aria-controls="two-factor" 
-                    aria-selected="{% if active_tab == 'two-factor' or not active_tab %}true{% else %}false{% endif %}">
+                    type="button" role="tab">
               <i class="bi bi-phone me-1"></i>Two-Factor Authentication
             </button>
           </li>
           <li class="nav-item" role="presentation">
             <button class="nav-link {% if active_tab == 'sessions' %}active{% endif %}" 
                     id="sessions-tab" data-bs-toggle="tab" data-bs-target="#sessions" 
-                    type="button" role="tab" aria-controls="sessions" 
-                    aria-selected="{% if active_tab == 'sessions' %}true{% else %}false{% endif %}">
+                    type="button" role="tab">
               <i class="bi bi-pc-display me-1"></i>Active Sessions
             </button>
           </li>
           <li class="nav-item" role="presentation">
             <button class="nav-link {% if active_tab == 'logs' %}active{% endif %}" 
                     id="logs-tab" data-bs-toggle="tab" data-bs-target="#logs" 
-                    type="button" role="tab" aria-controls="logs" 
-                    aria-selected="{% if active_tab == 'logs' %}true{% else %}false{% endif %}">
+                    type="button" role="tab">
               <i class="bi bi-journal-text me-1"></i>Security Logs
             </button>
           </li>
           <li class="nav-item" role="presentation">
             <button class="nav-link {% if active_tab == 'password' %}active{% endif %}" 
                     id="password-tab" data-bs-toggle="tab" data-bs-target="#password" 
-                    type="button" role="tab" aria-controls="password" 
-                    aria-selected="{% if active_tab == 'password' %}true{% else %}false{% endif %}">
+                    type="button" role="tab">
               <i class="bi bi-key me-1"></i>Password
             </button>
           </li>
         </ul>
         
-        <div class="tab-content" id="securityTabsContent">
+        <!-- Tab panes -->
+        <div class="tab-content">
           <!-- Two-Factor Authentication Tab -->
-          <div class="tab-pane fade {% if active_tab == 'two-factor' or not active_tab %}show active{% endif %}" 
-               id="two-factor" role="tabpanel" aria-labelledby="two-factor-tab">
+          <div class="tab-pane fade {% if active_tab == 'two-factor' %}show active{% endif %}" id="two-factor" role="tabpanel">
             <div class="card border-0 shadow-sm">
               <div class="card-body">
                 <h4 class="card-title">Two-Factor Authentication</h4>
@@ -85,7 +82,7 @@
           </div>
           
           <!-- Active Sessions Tab -->
-          <div class="tab-pane fade {% if active_tab == 'sessions' %}show active{% endif %}" id="sessions" role="tabpanel" aria-labelledby="sessions-tab">
+          <div class="tab-pane fade {% if active_tab == 'sessions' %}show active{% endif %}" id="sessions" role="tabpanel">
             <div class="card border-0 shadow-sm">
               <div class="card-body">
                 <div class="d-flex justify-content-between align-items-center mb-4">
@@ -154,7 +151,7 @@
           </div>
           
           <!-- Security Logs Tab -->
-          <div class="tab-pane fade {% if active_tab == 'logs' %}show active{% endif %}" id="logs" role="tabpanel" aria-labelledby="logs-tab">
+          <div class="tab-pane fade {% if active_tab == 'logs' %}show active{% endif %}" id="logs" role="tabpanel">
             <div class="card border-0 shadow-sm">
               <div class="card-body">
                 <h4 class="card-title mb-4">Security Logs</h4>
@@ -214,7 +211,7 @@
           </div>
           
           <!-- Password Tab -->
-          <div class="tab-pane fade {% if active_tab == 'password' %}show active{% endif %}" id="password" role="tabpanel" aria-labelledby="password-tab">
+          <div class="tab-pane fade {% if active_tab == 'password' %}show active{% endif %}" id="password" role="tabpanel">
             <div class="card border-0 shadow-sm">
               <div class="card-body">
                 <h4 class="card-title">Change Password</h4>
@@ -223,7 +220,7 @@
                   and include uppercase letters, lowercase letters, numbers, and special characters.
                 </p>
                 
-                <form action="{{ url_for('change_password') }}" method="POST" class="mt-4">
+                <form action="{{ url_for('change_password') }}" method="POST" class="mt-4" id="passwordForm">
                   <div class="mb-3">
                     <label for="current_password" class="form-label">Current Password</label>
                     <input type="password" class="form-control" id="current_password" name="current_password" required>
@@ -232,7 +229,7 @@
                   <div class="mb-3">
                     <label for="new_password" class="form-label">New Password</label>
                     <input type="password" class="form-control" id="new_password" name="new_password" required
-                           minlength="8" pattern="^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$">
+                           minlength="8">
                     <div class="form-text">
                       Password must be at least 8 characters long and include uppercase, lowercase, number, and special character
                     </div>
@@ -258,61 +255,36 @@
 
 <script>
   document.addEventListener('DOMContentLoaded', function() {
-    // Initialize Bootstrap tabs properly
-    var tabEl = document.querySelector('a[data-bs-toggle="tab"]')
-    var triggerTabList = [].slice.call(document.querySelectorAll('#securityTabs button'))
-    
-    triggerTabList.forEach(function (triggerEl) {
-      var tabTrigger = new bootstrap.Tab(triggerEl)
-      
-      triggerEl.addEventListener('click', function (event) {
-        event.preventDefault()
-        tabTrigger.show()
-        
-        // Update URL hash without page reload
-        const tabTarget = triggerEl.getAttribute('data-bs-target')
-        if (tabTarget) {
-          history.replaceState(null, null, tabTarget)
-        }
-      })
-    })
-    
-    // Handle URL hash for direct tab access
-    if (window.location.hash) {
-      const hash = window.location.hash
-      const tabEl = document.querySelector(`button[data-bs-target="${hash}"]`)
-      if (tabEl) {
-        const tab = new bootstrap.Tab(tabEl)
-        tab.show()
+    // Set default tab if none is active
+    if (!document.querySelector('.tab-pane.active')) {
+      const defaultTab = document.querySelector('#two-factor-tab');
+      if (defaultTab) {
+        const bsTab = new bootstrap.Tab(defaultTab);
+        bsTab.show();
       }
     }
     
-    // Special handling for password tab when accessed directly
-    if (window.location.pathname === '/security/password') {
-      const passwordTab = document.querySelector('#password-tab')
-      if (passwordTab) {
-        const tab = new bootstrap.Tab(passwordTab)
-        tab.show()
-      }
-    }
-    
-    // Handle form validation for password change
-    const passwordForm = document.querySelector('form[action="{{ url_for("change_password") }}"]');
+    // Password form validation
+    const passwordForm = document.getElementById('passwordForm');
     if (passwordForm) {
-      const newPasswordInput = document.getElementById('new_password');
-      const confirmPasswordInput = document.getElementById('confirm_password');
-      
       passwordForm.addEventListener('submit', function(event) {
+        const newPassword = document.getElementById('new_password').value;
+        const confirmPassword = document.getElementById('confirm_password').value;
+        
         // Check if passwords match
-        if (newPasswordInput.value !== confirmPasswordInput.value) {
+        if (newPassword !== confirmPassword) {
           event.preventDefault();
           alert('New passwords do not match');
           return false;
         }
         
         // Check password strength
-        const passwordPattern = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
-        if (!passwordPattern.test(newPasswordInput.value)) {
+        const hasUpperCase = /[A-Z]/.test(newPassword);
+        const hasLowerCase = /[a-z]/.test(newPassword);
+        const hasNumbers = /\d/.test(newPassword);
+        const hasSpecialChar = /[!@#$%^&*(),.?":{}|<>]/.test(newPassword);
+        
+        if (!(hasUpperCase && hasLowerCase && hasNumbers && hasSpecialChar && newPassword.length >= 8)) {
           event.preventDefault();
           alert('Password must be at least 8 characters long and include uppercase, lowercase, number, and special character');
           return false;

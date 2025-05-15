@@ -1,0 +1,168 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-md-8">
+    <div class="card">
+      <div class="card-header">
+        <h3 class="mb-0">
+          <i class="bi bi-pencil-square me-2"></i>Edit Transaction
+        </h3>
+      </div>
+      <div class="card-body">
+        <form method="POST" class="needs-validation" novalidate>
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label for="amount" class="form-label">Amount</label>
+              <div class="input-group">
+                <span class="input-group-text">₹</span>
+                <input type="number" step="0.01" class="form-control" id="amount" name="amount" value="{{ expense.amount }}" required>
+              </div>
+              <div class="invalid-feedback">
+                Please enter an amount.
+              </div>
+            </div>
+            <div class="col-md-6 mb-3">
+              <label for="transaction_type" class="form-label">Transaction Type</label>
+              <select class="form-select" id="transaction_type" name="transaction_type" required>
+                <option value="">Select type</option>
+                <option value="CR" {% if expense.transaction_type == 'CR' %}selected{% endif %}>Credit (Income)</option>
+                <option value="DR" {% if expense.transaction_type == 'DR' %}selected{% endif %}>Debit (Expense)</option>
+              </select>
+              <div class="invalid-feedback">
+                Please select a transaction type.
+              </div>
+            </div>
+          </div>
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label for="category" class="form-label">Category</label>
+              <select class="form-select" id="category" name="category" required>
+                <option value="">Select category</option>
+                {% for category in categories %}
+                <option value="{{ category.id }}" {% if category.id == expense.category_id %}selected{% endif %}>{{ category.name }}</option>
+                {% endfor %}
+              </select>
+              <div class="invalid-feedback">
+                Please select a category.
+              </div>
+            </div>
+            <div class="col-md-6 mb-3">
+              <label for="date" class="form-label">Date</label>
+              <input type="date" class="form-control" id="date" name="date" value="{{ expense.date.strftime('%Y-%m-%d') }}" required>
+              <div class="invalid-feedback">
+                Please select a date.
+              </div>
+            </div>
+          </div>
+          <div class="mb-3">
+            <label for="description" class="form-label">Description</label>
+            <textarea class="form-control" id="description" name="description" rows="3">{{ expense.description }}</textarea>
+          </div>
+          
+          <!-- Recurring Transaction Options -->
+          <div class="mb-3">
+            <div class="form-check form-switch">
+              <input class="form-check-input" type="checkbox" id="is_recurring" name="is_recurring" {% if expense.is_recurring %}checked{% endif %}>
+              <label class="form-check-label" for="is_recurring">Make this a recurring transaction</label>
+            </div>
+          </div>
+          
+          <div id="recurring_options" class="mb-3 border rounded p-3 bg-light" style="display: {% if expense.is_recurring %}block{% else %}none{% endif %};">
+            <h5 class="mb-3">Recurring Options</h5>
+            
+            <div class="row mb-3">
+              <div class="col-md-6">
+                <label for="recurrence_type" class="form-label">Recurrence Pattern</label>
+                <select class="form-select" id="recurrence_type" name="recurrence_type">
+                  <option value="daily" {% if expense.recurrence_type == 'daily' %}selected{% endif %}>Daily</option>
+                  <option value="weekly" {% if expense.recurrence_type == 'weekly' %}selected{% endif %}>Weekly</option>
+                  <option value="monthly" {% if expense.recurrence_type == 'monthly' or not expense.recurrence_type %}selected{% endif %}>Monthly</option>
+                  <option value="yearly" {% if expense.recurrence_type == 'yearly' %}selected{% endif %}>Yearly</option>
+                </select>
+              </div>
+              
+              <div class="col-md-6" id="monthly_options" style="display: {% if expense.recurrence_type != 'monthly' and expense.recurrence_type %}none{% else %}block{% endif %};">
+                <label for="recurrence_day" class="form-label">Day of Month</label>
+                <select class="form-select" id="recurrence_day" name="recurrence_day">
+                  {% for day in range(1, 32) %}
+                  <option value="{{ day }}" {% if expense.recurrence_day == day %}selected{% endif %}>{{ day }}</option>
+                  {% endfor %}
+                </select>
+              </div>
+            </div>
+            
+            <div class="mb-3">
+              <label for="recurrence_end_date" class="form-label">End Date (Optional)</label>
+              <input type="date" class="form-control" id="recurrence_end_date" name="recurrence_end_date" 
+                     value="{% if expense.recurrence_end_date %}{{ expense.recurrence_end_date.strftime('%Y-%m-%d') }}{% endif %}">
+              <div class="form-text">Leave blank for no end date</div>
+            </div>
+          </div>
+          
+          <div class="d-grid gap-2">
+            <button type="submit" class="btn btn-primary">
+              <i class="bi bi-save me-1"></i>Save Changes
+            </button>
+            <a href="{{ url_for('view_transactions') }}" class="btn btn-outline-secondary">
+              <i class="bi bi-x-circle me-1"></i>Cancel
+            </a>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  // Form validation
+  (function () {
+    'use strict'
+    var forms = document.querySelectorAll('.needs-validation')
+    Array.prototype.slice.call(forms)
+      .forEach(function (form) {
+        form.addEventListener('submit', function (event) {
+          if (!form.checkValidity()) {
+            event.preventDefault()
+            event.stopPropagation()
+          }
+          form.classList.add('was-validated')
+        }, false)
+      })
+  })()
+  
+  // Handle recurring transaction options
+  const isRecurringCheckbox = document.getElementById('is_recurring');
+  const recurringOptions = document.getElementById('recurring_options');
+  const recurrenceTypeSelect = document.getElementById('recurrence_type');
+  const monthlyOptions = document.getElementById('monthly_options');
+  const dateInput = document.getElementById('date');
+  const recurrenceDaySelect = document.getElementById('recurrence_day');
+  
+  // Show/hide recurring options based on checkbox
+  isRecurringCheckbox.addEventListener('change', function() {
+    recurringOptions.style.display = this.checked ? 'block' : 'none';
+    
+    // Set the default recurrence day to match the selected date
+    if (this.checked && dateInput.value) {
+      const selectedDate = new Date(dateInput.value);
+      const dayOfMonth = selectedDate.getDate();
+      recurrenceDaySelect.value = dayOfMonth;
+    }
+  });
+  
+  // Show/hide monthly options based on recurrence type
+  recurrenceTypeSelect.addEventListener('change', function() {
+    monthlyOptions.style.display = this.value === 'monthly' ? 'block' : 'none';
+  });
+  
+  // Update recurrence day when date changes
+  dateInput.addEventListener('change', function() {
+    if (isRecurringCheckbox.checked && recurrenceTypeSelect.value === 'monthly') {
+      const selectedDate = new Date(this.value);
+      const dayOfMonth = selectedDate.getDate();
+      recurrenceDaySelect.value = dayOfMonth;
+    }
+  });
+</script>
+{% endblock %}

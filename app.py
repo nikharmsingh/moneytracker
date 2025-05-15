@@ -603,10 +603,17 @@ def logout():
     return response
 
 # Security Routes
-@app.route('/security', methods=['GET'])
+@app.route('/security/password', methods=['GET'])
 @login_required
-def security_settings():
-    """Security settings page"""
+def security_password():
+    """Direct access to password tab in security settings"""
+    return security_settings(tab='password')
+
+@app.route('/security', methods=['GET'])
+@app.route('/security/<tab>', methods=['GET'])
+@login_required
+def security_settings(tab=None):
+    """Security settings page with optional tab parameter"""
     # Get user's active sessions
     user_data = db.users.find_one({'_id': ObjectId(current_user.id)})
     active_sessions = user_data.get('active_sessions', [])
@@ -614,10 +621,21 @@ def security_settings():
     # Get security logs
     security_logs = current_user.get_security_logs(limit=20)
     
-    return render_template('security.html', 
+    # Determine which tab to show
+    active_tab = 'two-factor'  # Default tab
+    
+    # Check if we're accessing the password tab directly
+    if request.path == '/security/password':
+        active_tab = 'password'
+    elif tab:
+        if tab in ['two-factor', 'sessions', 'logs', 'password']:
+            active_tab = tab
+    
+    return render_template('security_fixed.html', 
                           active_sessions=active_sessions,
                           security_logs=security_logs,
-                          two_factor_enabled=current_user.two_factor_enabled)
+                          two_factor_enabled=current_user.two_factor_enabled,
+                          active_tab=active_tab)
 
 @app.route('/security/setup_2fa', methods=['GET', 'POST'])
 @login_required
@@ -725,24 +743,24 @@ def change_password():
     # Verify current password
     if not check_password_hash(current_user.password, current_password):
         flash('Current password is incorrect', 'danger')
-        return redirect(url_for('security_settings'))
+        return redirect(url_for('security_password'))
     
     # Validate new password
     if not is_password_strong(new_password):
         flash('Password must be at least 8 characters long and include uppercase, lowercase, number, and special character', 'danger')
-        return redirect(url_for('security_settings'))
+        return redirect(url_for('security_password'))
     
     # Confirm passwords match
     if new_password != confirm_password:
         flash('New passwords do not match', 'danger')
-        return redirect(url_for('security_settings'))
+        return redirect(url_for('security_password'))
     
     # Update password
     hashed_password = generate_password_hash(new_password)
     current_user.update_password(hashed_password)
     
     flash('Your password has been updated successfully', 'success')
-    return redirect(url_for('security_settings'))
+    return redirect(url_for('security_password'))
 
 @app.route('/reset_password', methods=['GET', 'POST'])
 @limiter.limit("5 per hour")
@@ -1647,6 +1665,76 @@ def add_salary():
     
     return render_template('add_salary.html', default_date=default_date)
 
+@app.route('/edit_transaction/<id>', methods=['GET', 'POST'])
+@login_required
+def edit_transaction(id):
+    # Get the expense to edit
+    expense_data = db.expenses.find_one({'_id': ObjectId(id), 'user_id': current_user.id})
+    if not expense_data:
+        flash('Transaction not found!', 'danger')
+        return redirect(url_for('view_transactions'))
+    
+    expense = Expense(expense_data)
+    
+    # Get categories for the form
+    categories = Category.get_by_user(current_user.id)
+    # Deduplicate by name, prefer user-specific over global
+    unique_categories = {}
+    for c in categories:
+        if c.name not in unique_categories or not c.is_global:
+            unique_categories[c.name] = c
+    categories = list(unique_categories.values())
+    
+    if request.method == 'POST':
+        # Get form data
+        amount = float(request.form['amount'])
+        category_id = request.form['category']
+        description = request.form['description']
+        date = datetime.strptime(request.form['date'], '%Y-%m-%d')
+        transaction_type = request.form['transaction_type']
+        
+        # Check if this is a recurring transaction
+        is_recurring = 'is_recurring' in request.form
+        recurrence_type = request.form.get('recurrence_type') if is_recurring else None
+        recurrence_day = int(request.form.get('recurrence_day', 1)) if is_recurring and recurrence_type == 'monthly' else None
+        recurrence_end_date = None
+        if is_recurring and request.form.get('recurrence_end_date'):
+            recurrence_end_date = datetime.strptime(request.form['recurrence_end_date'], '%Y-%m-%d')
+        
+        # Update the transaction
+        update_data = {
+            'amount': amount,
+            'category_id': ObjectId(category_id),
+            'description': description,
+            'date': date,
+            'transaction_type': transaction_type,
+            'is_recurring': is_recurring
+        }
+        
+        # Add recurring fields if this is a recurring transaction
+        if is_recurring:
+            update_data['recurrence_type'] = recurrence_type
+            update_data['recurrence_day'] = recurrence_day
+            update_data['recurrence_end_date'] = recurrence_end_date
+            
+            # Calculate next occurrence date if this is a recurring transaction
+            next_date = Expense.calculate_next_date(date, recurrence_type, recurrence_day)
+            update_data['next_date'] = next_date
+        else:
+            # Remove recurring fields if this is not a recurring transaction
+            update_data['recurrence_type'] = None
+            update_data['recurrence_day'] = None
+            update_data['recurrence_end_date'] = None
+            update_data['next_date'] = None
+        
+        # Update the transaction
+        db.expenses.update_one({'_id': ObjectId(id), 'user_id': current_user.id}, {'$set': update_data})
+        
+        flash('Transaction updated successfully!', 'success')
+        return redirect(url_for('view_transactions'))
+    
+    return render_template('edit_transaction.html', expense=expense, categories=categories)
+
 @app.route('/delete_expense/<id>')
 @login_required
 def delete_expense(id):
@@ -1825,6 +1913,10 @@ def view_transactions():
     start_date = request.args.get('start_date')
     end_date = request.args.get('end_date')
     
+    # Get pagination parameters
+    page = request.args.get('page', 1, type=int)
+    per_page = 20  # Number of transactions per page
+    
     # Fix any transactions with invalid category IDs
     Expense.fix_invalid_categories(current_user.id)
     
@@ -1840,8 +1932,12 @@ def view_transactions():
     elif end_date:
         query['date'] = {'$lte': datetime.strptime(end_date, '%Y-%m-%d')}
     
-    # Get all expenses sorted by timestamp in descending order
-    expenses = list(db.expenses.find(query).sort('timestamp', -1))
+    # Get total count for pagination
+    total_transactions = db.expenses.count_documents(query)
+    total_pages = (total_transactions + per_page - 1) // per_page  # Ceiling division
+    
+    # Get paginated expenses sorted by timestamp in descending order
+    expenses = list(db.expenses.find(query).sort('timestamp', -1).skip((page - 1) * per_page).limit(per_page))
     
     # Get both global and user-specific categories
     categories = Category.get_by_user(current_user.id)
@@ -1860,8 +1956,16 @@ def view_transactions():
     for expense in expenses:
         expense.category_name = category_dict.get(expense.category_id, 'Unknown')
     
-    # Handle CSV download
+    # Handle CSV download - for CSV we include all transactions, not just the current page
     if request.args.get('download') == 'csv':
+        # Get all expenses for CSV download
+        all_expenses = list(db.expenses.find(query).sort('timestamp', -1))
+        all_expenses = [Expense(expense) for expense in all_expenses]
+        
+        # Attach category name to each expense
+        for expense in all_expenses:
+            expense.category_name = category_dict.get(expense.category_id, 'Unknown')
+            
         output = StringIO()
         writer = csv.writer(output)
         
@@ -1869,7 +1973,7 @@ def view_transactions():
         writer.writerow(['Date', 'Type', 'Category', 'Amount', 'Description', 'Added On'])
         
         # Write data
-        for expense in expenses:
+        for expense in all_expenses:
             writer.writerow([
                 expense.date.strftime('%Y-%m-%d'),
                 'Credit' if expense.transaction_type == 'CR' else 'Debit',
@@ -1886,7 +1990,22 @@ def view_transactions():
         response.headers['Content-type'] = 'text/csv'
         return response
     
-    return render_template('transactions.html', expenses=expenses, categories=categories)
+    # Create pagination info
+    pagination = {
+        'page': page,
+        'per_page': per_page,
+        'total': total_transactions,
+        'total_pages': total_pages,
+        'has_prev': page > 1,
+        'has_next': page < total_pages
+    }
+    
+    return render_template('transactions.html', 
+                          expenses=expenses, 
+                          categories=categories, 
+                          pagination=pagination,
+                          start_date=start_date,
+                          end_date=end_date)
 
 # Import migration functions
 from migrate_users import migrate_users_to_add_email, migrate_users_to_add_registration_date

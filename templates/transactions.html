@@ -15,9 +15,9 @@
             <div class="col-12 col-md-auto flex-md-grow-1">
               <div class="input-group">
                 <span class="input-group-text d-none d-md-flex">From</span>
-                <input type="date" class="form-control" name="start_date" value="{{ request.args.get('start_date', '') }}" aria-label="Start date">
+                <input type="date" class="form-control" name="start_date" value="{{ start_date }}" aria-label="Start date">
                 <span class="input-group-text">to</span>
-                <input type="date" class="form-control" name="end_date" value="{{ request.args.get('end_date', '') }}" aria-label="End date">
+                <input type="date" class="form-control" name="end_date" value="{{ end_date }}" aria-label="End date">
               </div>
             </div>
             <div class="col-12 col-md-auto">
@@ -25,6 +25,8 @@
                 <i class="bi bi-filter me-1"></i>Filter
               </button>
             </div>
+            <!-- Hidden input to reset to page 1 when filtering -->
+            <input type="hidden" name="page" value="1">
           </div>
         </form>
         
@@ -33,7 +35,7 @@
           <a href="{{ url_for('add_expense') }}" class="btn btn-primary btn-mobile-block">
             <i class="bi bi-plus-circle me-2"></i>Add Transaction
           </a>
-          <a href="{{ url_for('view_transactions', download='csv', start_date=request.args.get('start_date', ''), end_date=request.args.get('end_date', '')) }}" class="btn btn-primary btn-mobile-block">
+          <a href="{{ url_for('view_transactions', download='csv', start_date=start_date, end_date=end_date) }}" class="btn btn-primary btn-mobile-block">
             <i class="bi bi-download me-2"></i>Download CSV
           </a>
         </div>
@@ -153,6 +155,66 @@
         </div>
         {% endif %}
       </div>
+      
+      <!-- Pagination controls -->
+      {% if pagination and pagination.total_pages > 1 %}
+      <div class="card-footer">
+        <nav aria-label="Transaction pagination">
+          <ul class="pagination justify-content-center mb-0">
+            <!-- Previous page button -->
+            <li class="page-item {% if not pagination.has_prev %}disabled{% endif %}">
+              <a class="page-link" href="{{ url_for('view_transactions', page=pagination.page-1, start_date=start_date, end_date=end_date) }}" aria-label="Previous">
+                <span aria-hidden="true">&laquo;</span>
+              </a>
+            </li>
+            
+            <!-- Page numbers -->
+            {% set start_page = [1, pagination.page - 2]|max %}
+            {% set end_page = [pagination.total_pages, pagination.page + 2]|min %}
+            
+            {% if start_page > 1 %}
+              <li class="page-item">
+                <a class="page-link" href="{{ url_for('view_transactions', page=1, start_date=start_date, end_date=end_date) }}">1</a>
+              </li>
+              {% if start_page > 2 %}
+                <li class="page-item disabled">
+                  <span class="page-link">...</span>
+                </li>
+              {% endif %}
+            {% endif %}
+            
+            {% for p in range(start_page, end_page + 1) %}
+              <li class="page-item {% if p == pagination.page %}active{% endif %}">
+                <a class="page-link" href="{{ url_for('view_transactions', page=p, start_date=start_date, end_date=end_date) }}">{{ p }}</a>
+              </li>
+            {% endfor %}
+            
+            {% if end_page < pagination.total_pages %}
+              {% if end_page < pagination.total_pages - 1 %}
+                <li class="page-item disabled">
+                  <span class="page-link">...</span>
+                </li>
+              {% endif %}
+              <li class="page-item">
+                <a class="page-link" href="{{ url_for('view_transactions', page=pagination.total_pages, start_date=start_date, end_date=end_date) }}">{{ pagination.total_pages }}</a>
+              </li>
+            {% endif %}
+            
+            <!-- Next page button -->
+            <li class="page-item {% if not pagination.has_next %}disabled{% endif %}">
+              <a class="page-link" href="{{ url_for('view_transactions', page=pagination.page+1, start_date=start_date, end_date=end_date) }}" aria-label="Next">
+                <span aria-hidden="true">&raquo;</span>
+              </a>
+            </li>
+          </ul>
+        </nav>
+        
+        <!-- Pagination info -->
+        <div class="text-center text-muted mt-2 small">
+          Showing {{ (pagination.page - 1) * pagination.per_page + 1 }}-{{ [pagination.page * pagination.per_page, pagination.total]|min }} of {{ pagination.total }} transactions
+        </div>
+      </div>
+      {% endif %}
     </div>
   </div>
 </div>

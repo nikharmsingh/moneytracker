@@ -1,0 +1,268 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row">
+  <div class="col-12">
+    <div class="card mb-4">
+      <div class="card-header">
+        <h3 class="mb-0">
+          <i class="bi bi-shield-lock me-2"></i>Security Settings
+        </h3>
+      </div>
+      <div class="card-body">
+        <!-- Custom tab navigation -->
+        <div class="d-flex flex-wrap mb-4 border-bottom">
+          <a href="{{ url_for('security_settings') }}" class="text-decoration-none me-3 py-2 px-3 {% if active_tab == 'two-factor' %}border-bottom border-primary fw-bold text-primary{% else %}text-muted{% endif %}">
+            <i class="bi bi-phone me-1"></i>Two-Factor Authentication
+          </a>
+          <a href="{{ url_for('security_settings', tab='sessions') }}" class="text-decoration-none me-3 py-2 px-3 {% if active_tab == 'sessions' %}border-bottom border-primary fw-bold text-primary{% else %}text-muted{% endif %}">
+            <i class="bi bi-pc-display me-1"></i>Active Sessions
+          </a>
+          <a href="{{ url_for('security_settings', tab='logs') }}" class="text-decoration-none me-3 py-2 px-3 {% if active_tab == 'logs' %}border-bottom border-primary fw-bold text-primary{% else %}text-muted{% endif %}">
+            <i class="bi bi-journal-text me-1"></i>Security Logs
+          </a>
+          <a href="{{ url_for('security_password') }}" class="text-decoration-none me-3 py-2 px-3 {% if active_tab == 'password' %}border-bottom border-primary fw-bold text-primary{% else %}text-muted{% endif %}">
+            <i class="bi bi-key me-1"></i>Password
+          </a>
+        </div>
+        
+        <!-- Tab content - only show the active tab -->
+        {% if active_tab == 'two-factor' %}
+        <!-- Two-Factor Authentication Tab -->
+        <div class="card border-0 shadow-sm">
+          <div class="card-body">
+            <h4 class="card-title">Two-Factor Authentication</h4>
+            <p class="card-text text-muted">
+              Two-factor authentication adds an extra layer of security to your account by requiring a verification code
+              in addition to your password when you log in.
+            </p>
+            
+            {% if two_factor_enabled %}
+            <div class="alert alert-success">
+              <i class="bi bi-check-circle me-2"></i>Two-factor authentication is enabled for your account.
+            </div>
+            
+            <form action="{{ url_for('disable_2fa') }}" method="POST" class="mt-4">
+              <div class="mb-3">
+                <label for="password" class="form-label">Confirm your password to disable 2FA</label>
+                <input type="password" class="form-control" id="password" name="password" required>
+              </div>
+              <button type="submit" class="btn btn-danger">
+                <i class="bi bi-shield-x me-2"></i>Disable Two-Factor Authentication
+              </button>
+            </form>
+            {% else %}
+            <div class="alert alert-warning">
+              <i class="bi bi-exclamation-triangle me-2"></i>Two-factor authentication is not enabled for your account.
+            </div>
+            
+            <a href="{{ url_for('setup_2fa') }}" class="btn btn-primary mt-3">
+              <i class="bi bi-shield-plus me-2"></i>Set Up Two-Factor Authentication
+            </a>
+            {% endif %}
+          </div>
+        </div>
+        
+        {% elif active_tab == 'sessions' %}
+        <!-- Active Sessions Tab -->
+        <div class="card border-0 shadow-sm">
+          <div class="card-body">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+              <h4 class="card-title mb-0">Active Sessions</h4>
+              <form action="{{ url_for('revoke_all_sessions') }}" method="POST">
+                <button type="submit" class="btn btn-danger btn-sm">
+                  <i class="bi bi-x-circle me-1"></i>Revoke All Other Sessions
+                </button>
+              </form>
+            </div>
+            
+            <div class="table-responsive">
+              <table class="table table-hover">
+                <thead>
+                  <tr>
+                    <th>Device</th>
+                    <th>IP Address</th>
+                    <th>Last Active</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for session_data in active_sessions %}
+                  <tr class="{% if session_data.session_id == session.get('session_id') %}table-primary{% endif %}">
+                    <td>
+                      <div class="d-flex align-items-center">
+                        <i class="bi bi-laptop me-2"></i>
+                        <div>
+                          <div>{{ session_data.user_agent or 'Unknown Device' }}</div>
+                          <small class="text-muted">
+                            {% if session_data.session_id == session.get('session_id') %}
+                            Current Session
+                            {% endif %}
+                          </small>
+                        </div>
+                      </div>
+                    </td>
+                    <td>{{ session_data.ip_address or 'Unknown' }}</td>
+                    <td>{{ session_data.last_active.strftime('%Y-%m-%d %H:%M:%S') if session_data.last_active else 'Unknown' }}</td>
+                    <td>
+                      {% if session_data.session_id != session.get('session_id') %}
+                      <form action="{{ url_for('revoke_session', session_id=session_data.session_id) }}" method="POST">
+                        <button type="submit" class="btn btn-sm btn-outline-danger">
+                          <i class="bi bi-x-circle"></i> Revoke
+                        </button>
+                      </form>
+                      {% else %}
+                      <span class="badge bg-primary">Current</span>
+                      {% endif %}
+                    </td>
+                  </tr>
+                  {% endfor %}
+                  
+                  {% if not active_sessions %}
+                  <tr>
+                    <td colspan="4" class="text-center py-4">
+                      <i class="bi bi-info-circle me-2"></i>No active sessions found
+                    </td>
+                  </tr>
+                  {% endif %}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+        
+        {% elif active_tab == 'logs' %}
+        <!-- Security Logs Tab -->
+        <div class="card border-0 shadow-sm">
+          <div class="card-body">
+            <h4 class="card-title mb-4">Security Logs</h4>
+            
+            <div class="table-responsive">
+              <table class="table table-hover">
+                <thead>
+                  <tr>
+                    <th>Action</th>
+                    <th>Timestamp</th>
+                    <th>IP Address</th>
+                    <th>User Agent</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for log in security_logs %}
+                  <tr>
+                    <td>
+                      {% set icon = {
+                        'login_success': 'bi-box-arrow-in-right text-success',
+                        'login_failed': 'bi-x-circle text-danger',
+                        'account_locked': 'bi-lock-fill text-danger',
+                        'password_changed': 'bi-key text-primary',
+                        'password_reset_requested': 'bi-envelope text-warning',
+                        '2fa_setup_initiated': 'bi-shield-plus text-primary',
+                        '2fa_enabled': 'bi-shield-check text-success',
+                        '2fa_disabled': 'bi-shield-x text-danger',
+                        '2fa_backup_code_used': 'bi-shield-exclamation text-warning',
+                        'session_created': 'bi-plus-circle text-success',
+                        'session_terminated': 'bi-x-circle text-danger',
+                        'account_created': 'bi-person-plus text-success'
+                      }.get(log.action, 'bi-info-circle') %}
+                      
+                      <div class="d-flex align-items-center">
+                        <i class="bi {{ icon }} me-2"></i>
+                        <div>{{ log.action.replace('_', ' ').title() }}</div>
+                      </div>
+                    </td>
+                    <td>{{ log.timestamp.strftime('%Y-%m-%d %H:%M:%S') if log.timestamp else 'Unknown' }}</td>
+                    <td>{{ log.ip_address or 'Unknown' }}</td>
+                    <td class="text-truncate" style="max-width: 200px;">{{ log.user_agent or 'Unknown' }}</td>
+                  </tr>
+                  {% endfor %}
+                  
+                  {% if not security_logs %}
+                  <tr>
+                    <td colspan="4" class="text-center py-4">
+                      <i class="bi bi-info-circle me-2"></i>No security logs found
+                    </td>
+                  </tr>
+                  {% endif %}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+        
+        {% elif active_tab == 'password' %}
+        <!-- Password Tab -->
+        <div class="card border-0 shadow-sm">
+          <div class="card-body">
+            <h4 class="card-title">Change Password</h4>
+            <p class="card-text text-muted">
+              It's a good practice to change your password regularly. Your password should be at least 8 characters long
+              and include uppercase letters, lowercase letters, numbers, and special characters.
+            </p>
+            
+            <form action="{{ url_for('change_password') }}" method="POST" class="mt-4" id="passwordForm">
+              <div class="mb-3">
+                <label for="current_password" class="form-label">Current Password</label>
+                <input type="password" class="form-control" id="current_password" name="current_password" required>
+              </div>
+              
+              <div class="mb-3">
+                <label for="new_password" class="form-label">New Password</label>
+                <input type="password" class="form-control" id="new_password" name="new_password" required
+                       minlength="8">
+                <div class="form-text">
+                  Password must be at least 8 characters long and include uppercase, lowercase, number, and special character
+                </div>
+              </div>
+              
+              <div class="mb-4">
+                <label for="confirm_password" class="form-label">Confirm New Password</label>
+                <input type="password" class="form-control" id="confirm_password" name="confirm_password" required>
+              </div>
+              
+              <button type="submit" class="btn btn-primary">
+                <i class="bi bi-check-circle me-2"></i>Change Password
+              </button>
+            </form>
+          </div>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    // Password form validation
+    const passwordForm = document.getElementById('passwordForm');
+    if (passwordForm) {
+      passwordForm.addEventListener('submit', function(event) {
+        const newPassword = document.getElementById('new_password').value;
+        const confirmPassword = document.getElementById('confirm_password').value;
+        
+        // Check if passwords match
+        if (newPassword !== confirmPassword) {
+          event.preventDefault();
+          alert('New passwords do not match');
+          return false;
+        }
+        
+        // Check password strength
+        const hasUpperCase = /[A-Z]/.test(newPassword);
+        const hasLowerCase = /[a-z]/.test(newPassword);
+        const hasNumbers = /\d/.test(newPassword);
+        const hasSpecialChar = /[!@#$%^&*(),.?":{}|<>]/.test(newPassword);
+        
+        if (!(hasUpperCase && hasLowerCase && hasNumbers && hasSpecialChar && newPassword.length >= 8)) {
+          event.preventDefault();
+          alert('Password must be at least 8 characters long and include uppercase, lowercase, number, and special character');
+          return false;
+        }
+        
+        return true;
+      });
+    }
+  });
+</script>
+{% endblock %}
