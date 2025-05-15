@@ -20,8 +20,12 @@ from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 from flask_mail import Mail, Message
 import re
+from routes.enhanced_features import enhanced_features
 
 app = Flask(__name__)
+
+# Register blueprints
+app.register_blueprint(enhanced_features)
 
 # Initialize Flask-Limiter
 limiter = Limiter(

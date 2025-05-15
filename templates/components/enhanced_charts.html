@@ -1,0 +1,82 @@
+<!-- Enhanced Data Visualization Component -->
+<div class="row">
+  <!-- Expense vs Income Chart -->
+  <div class="col-lg-6 mb-4">
+    <div class="card h-100">
+      <div class="card-header">
+        <h5 class="mb-0">
+          <i class="bi bi-bar-chart-fill me-2"></i>Expense vs Income
+        </h5>
+      </div>
+      <div class="card-body">
+        <div class="chart-container" style="position: relative; height: 300px;">
+          <canvas id="expenseChart" data-chart-data='{{ expense_chart_data|tojson }}'></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Category Distribution Chart -->
+  <div class="col-lg-6 mb-4">
+    <div class="card h-100">
+      <div class="card-header">
+        <h5 class="mb-0">
+          <i class="bi bi-pie-chart-fill me-2"></i>Category Distribution
+        </h5>
+      </div>
+      <div class="card-body">
+        <div class="chart-container" style="position: relative; height: 300px;">
+          <canvas id="categoryChart" data-chart-data='{{ category_chart_data|tojson }}'></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Trend Analysis Chart -->
+  <div class="col-lg-12 mb-4">
+    <div class="card">
+      <div class="card-header">
+        <h5 class="mb-0">
+          <i class="bi bi-graph-up me-2"></i>Financial Trends
+        </h5>
+      </div>
+      <div class="card-body">
+        <div class="chart-container" style="position: relative; height: 300px;">
+          <canvas id="trendChart" data-chart-data='{{ trend_chart_data|tojson }}'></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Budget Performance Chart -->
+  <div class="col-lg-6 mb-4">
+    <div class="card h-100">
+      <div class="card-header">
+        <h5 class="mb-0">
+          <i class="bi bi-clipboard-data me-2"></i>Budget Performance
+        </h5>
+      </div>
+      <div class="card-body">
+        <div class="chart-container" style="position: relative; height: 300px;">
+          <canvas id="budgetChart" data-chart-data='{{ budget_chart_data|tojson }}'></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Savings Progress Chart -->
+  <div class="col-lg-6 mb-4">
+    <div class="card h-100">
+      <div class="card-header">
+        <h5 class="mb-0">
+          <i class="bi bi-piggy-bank me-2"></i>Savings Progress
+        </h5>
+      </div>
+      <div class="card-body">
+        <div class="chart-container" style="position: relative; height: 300px;">
+          <canvas id="savingsChart" data-chart-data='{{ savings_chart_data|tojson }}'></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

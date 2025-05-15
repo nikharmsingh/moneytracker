@@ -1,0 +1,149 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row mb-4">
+  <div class="col-12">
+    <div class="d-flex justify-content-between align-items-center">
+      <h1 class="h3 mb-0">
+        <i class="bi bi-gear me-2"></i>User Preferences
+      </h1>
+    </div>
+  </div>
+</div>
+
+<div class="row">
+  <div class="col-md-8 mx-auto">
+    <div class="card">
+      <div class="card-header">
+        <h5 class="mb-0">
+          <i class="bi bi-sliders me-2"></i>Customize Your Experience
+        </h5>
+      </div>
+      <div class="card-body">
+        <form action="{{ url_for('enhanced_features.user_preferences') }}" method="POST">
+          <!-- Appearance Settings -->
+          <div class="mb-4">
+            <h6 class="fw-bold mb-3">Appearance</h6>
+            
+            <div class="form-check form-switch mb-3">
+              <input class="form-check-input" type="checkbox" id="darkModePreference" name="dark_mode" {% if preferences.dark_mode %}checked{% endif %}>
+              <label class="form-check-label" for="darkModePreference">
+                Dark Mode
+              </label>
+              <div class="form-text">Enable dark mode for a more comfortable viewing experience in low-light environments.</div>
+            </div>
+          </div>
+          
+          <!-- Dashboard Settings -->
+          <div class="mb-4">
+            <h6 class="fw-bold mb-3">Dashboard</h6>
+            
+            <div class="form-check form-switch mb-3">
+              <input class="form-check-input" type="checkbox" id="showBudgetProgress" name="show_budget_progress" {% if preferences.show_budget_progress %}checked{% endif %}>
+              <label class="form-check-label" for="showBudgetProgress">
+                Show Budget Progress
+              </label>
+              <div class="form-text">Display budget progress bars on the dashboard.</div>
+            </div>
+            
+            <div class="form-check form-switch mb-3">
+              <input class="form-check-input" type="checkbox" id="showRecentTransactions" name="show_recent_transactions" {% if preferences.show_recent_transactions %}checked{% endif %}>
+              <label class="form-check-label" for="showRecentTransactions">
+                Show Recent Transactions
+              </label>
+              <div class="form-text">Display recent transactions on the dashboard.</div>
+            </div>
+            
+            <div class="form-check form-switch mb-3">
+              <input class="form-check-input" type="checkbox" id="showFinancialInsights" name="show_financial_insights" {% if preferences.show_financial_insights %}checked{% endif %}>
+              <label class="form-check-label" for="showFinancialInsights">
+                Show Financial Insights
+              </label>
+              <div class="form-text">Display financial insights and recommendations on the dashboard.</div>
+            </div>
+          </div>
+          
+          <!-- Notification Settings -->
+          <div class="mb-4">
+            <h6 class="fw-bold mb-3">Notifications</h6>
+            
+            <div class="form-check form-switch mb-3">
+              <input class="form-check-input" type="checkbox" id="budgetAlerts" name="budget_alerts" {% if preferences.budget_alerts %}checked{% endif %}>
+              <label class="form-check-label" for="budgetAlerts">
+                Budget Alerts
+              </label>
+              <div class="form-text">Receive alerts when you're approaching or exceeding your budget limits.</div>
+            </div>
+            
+            <div class="form-check form-switch mb-3">
+              <input class="form-check-input" type="checkbox" id="recurringTransactionReminders" name="recurring_transaction_reminders" {% if preferences.recurring_transaction_reminders %}checked{% endif %}>
+              <label class="form-check-label" for="recurringTransactionReminders">
+                Recurring Transaction Reminders
+              </label>
+              <div class="form-text">Receive reminders for upcoming recurring transactions.</div>
+            </div>
+            
+            <div class="form-check form-switch mb-3">
+              <input class="form-check-input" type="checkbox" id="monthlyReportNotifications" name="monthly_report_notifications" {% if preferences.monthly_report_notifications %}checked{% endif %}>
+              <label class="form-check-label" for="monthlyReportNotifications">
+                Monthly Report Notifications
+              </label>
+              <div class="form-text">Receive notifications when your monthly financial report is ready.</div>
+            </div>
+          </div>
+          
+          <!-- Currency Settings -->
+          <div class="mb-4">
+            <h6 class="fw-bold mb-3">Currency</h6>
+            
+            <div class="mb-3">
+              <label for="currencyFormat" class="form-label">Currency Format</label>
+              <select class="form-select" id="currencyFormat" name="currency_format">
+                <option value="USD" {% if preferences.currency_format == 'USD' %}selected{% endif %}>USD ($)</option>
+                <option value="EUR" {% if preferences.currency_format == 'EUR' %}selected{% endif %}>EUR (€)</option>
+                <option value="GBP" {% if preferences.currency_format == 'GBP' %}selected{% endif %}>GBP (£)</option>
+                <option value="JPY" {% if preferences.currency_format == 'JPY' %}selected{% endif %}>JPY (¥)</option>
+                <option value="INR" {% if preferences.currency_format == 'INR' %}selected{% endif %}>INR (₹)</option>
+              </select>
+              <div class="form-text">Select your preferred currency format for displaying amounts.</div>
+            </div>
+          </div>
+          
+          <!-- Save Button -->
+          <div class="text-end">
+            <button type="submit" class="btn btn-primary">
+              <i class="bi bi-save me-1"></i>Save Preferences
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    // Sync the dark mode toggle in the navbar with the preference checkbox
+    const darkModeToggle = document.getElementById('darkModeToggle');
+    const darkModePreference = document.getElementById('darkModePreference');
+    
+    if (darkModeToggle && darkModePreference) {
+      // When the navbar toggle changes, update the preference checkbox
+      darkModeToggle.addEventListener('change', function() {
+        darkModePreference.checked = this.checked;
+      });
+      
+      // When the preference checkbox changes, update the navbar toggle
+      darkModePreference.addEventListener('change', function() {
+        darkModeToggle.checked = this.checked;
+        
+        // Trigger the change event on the navbar toggle to apply the theme
+        const event = new Event('change');
+        darkModeToggle.dispatchEvent(event);
+      });
+    }
+  });
+</script>
+{% endblock %}

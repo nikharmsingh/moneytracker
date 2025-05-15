@@ -1,0 +1,194 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row mb-4">
+  <div class="col-12">
+    <div class="d-flex justify-content-between align-items-center">
+      <h1 class="h3 mb-0">
+        <i class="bi bi-file-earmark-bar-graph me-2"></i>Reports & Analytics
+      </h1>
+      <div>
+        <button class="btn btn-outline-primary" id="exportReportBtn">
+          <i class="bi bi-download me-1"></i>Export Report
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Include Advanced Filters Component -->
+{% include 'components/advanced_filters.html' %}
+
+<!-- Include Enhanced Charts Component -->
+{% include 'components/enhanced_charts.html' %}
+
+<!-- Transactions Table with Advanced Features -->
+<div class="card mb-4">
+  <div class="card-header">
+    <h5 class="mb-0">
+      <i class="bi bi-table me-2"></i>Transaction Details
+    </h5>
+  </div>
+  <div class="card-body">
+    <div class="table-responsive">
+      <table id="expenseTable" class="table table-striped table-hover">
+        <thead>
+          <tr>
+            <th class="date-column">Date</th>
+            <th>Description</th>
+            <th>Category</th>
+            <th class="amount-column">Amount</th>
+            <th>Type</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for expense in expenses %}
+          <tr>
+            <td class="date-column">{{ expense.date.strftime('%Y-%m-%d') }}</td>
+            <td>{{ expense.description }}</td>
+            <td>{{ expense.category }}</td>
+            <td class="amount-column">{{ expense.amount }}</td>
+            <td>{{ expense.transaction_type }}</td>
+            <td>
+              <div class="btn-group btn-group-sm">
+                <a href="{{ url_for('edit_expense', expense_id=expense.id) }}" class="btn btn-outline-primary">
+                  <i class="bi bi-pencil"></i>
+                </a>
+                <a href="{{ url_for('delete_expense', expense_id=expense.id) }}" class="btn btn-outline-danger delete-expense">
+                  <i class="bi bi-trash"></i>
+                </a>
+              </div>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- Financial Insights Card -->
+<div class="card mb-4">
+  <div class="card-header">
+    <h5 class="mb-0">
+      <i class="bi bi-lightbulb me-2"></i>Financial Insights
+    </h5>
+  </div>
+  <div class="card-body">
+    <div class="row">
+      <div class="col-md-4 mb-3">
+        <div class="card h-100 border-0 shadow-sm">
+          <div class="card-body">
+            <h6 class="card-title text-primary">
+              <i class="bi bi-graph-up-arrow me-2"></i>Spending Trend
+            </h6>
+            <p class="card-text">
+              {% if trend_chart_data.expenses[-1] > trend_chart_data.expenses[-2] %}
+              Your spending increased by {{ ((trend_chart_data.expenses[-1] - trend_chart_data.expenses[-2]) / trend_chart_data.expenses[-2] * 100)|round|int }}% compared to last month.
+              {% else %}
+              Your spending decreased by {{ ((trend_chart_data.expenses[-2] - trend_chart_data.expenses[-1]) / trend_chart_data.expenses[-2] * 100)|round|int }}% compared to last month.
+              {% endif %}
+            </p>
+          </div>
+        </div>
+      </div>
+      
+      <div class="col-md-4 mb-3">
+        <div class="card h-100 border-0 shadow-sm">
+          <div class="card-body">
+            <h6 class="card-title text-success">
+              <i class="bi bi-piggy-bank me-2"></i>Savings Rate
+            </h6>
+            <p class="card-text">
+              {% set total_income = trend_chart_data.income[-1] %}
+              {% set total_expense = trend_chart_data.expenses[-1] %}
+              {% set savings_rate = ((total_income - total_expense) / total_income * 100)|round|int if total_income > 0 else 0 %}
+              Your current savings rate is {{ savings_rate }}% of your income.
+              {% if savings_rate < 20 %}
+              Consider increasing your savings to at least 20% of your income.
+              {% elif savings_rate >= 20 and savings_rate < 30 %}
+              Good job! You're saving a healthy portion of your income.
+              {% else %}
+              Excellent! You're saving a significant portion of your income.
+              {% endif %}
+            </p>
+          </div>
+        </div>
+      </div>
+      
+      <div class="col-md-4 mb-3">
+        <div class="card h-100 border-0 shadow-sm">
+          <div class="card-body">
+            <h6 class="card-title text-danger">
+              <i class="bi bi-exclamation-triangle me-2"></i>Top Expense Category
+            </h6>
+            <p class="card-text">
+              {% if category_chart_data.labels %}
+              Your highest spending category is "{{ category_chart_data.labels[0] }}" at {{ category_chart_data.data[0]|int|format_currency }}.
+              {% if category_chart_data.data[0] > (trend_chart_data.expenses[-1] / 3) %}
+              This represents a significant portion of your monthly expenses.
+              {% endif %}
+              {% else %}
+              No expense data available to analyze.
+              {% endif %}
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    // Initialize export functionality
+    document.getElementById('exportReportBtn').addEventListener('click', function() {
+      // If using DataTables, use its export functionality
+      if ($.fn.DataTable.isDataTable('#expenseTable')) {
+        const exportBtn = $('.dt-buttons .buttons-excel');
+        if (exportBtn.length) {
+          exportBtn.click();
+        }
+      } else {
+        // Otherwise, create a custom export function
+        exportToExcel();
+      }
+    });
+    
+    // Custom export function
+    function exportToExcel() {
+      const table = document.getElementById('expenseTable');
+      let csv = [];
+      const rows = table.querySelectorAll('tr');
+      
+      for (let i = 0; i < rows.length; i++) {
+        const row = [], cols = rows[i].querySelectorAll('td, th');
+        
+        for (let j = 0; j < cols.length - 1; j++) { // Skip the Actions column
+          // Get the text content and clean it
+          let data = cols[j].textContent.trim();
+          // Escape quotes and wrap in quotes if it contains commas
+          if (data.includes(',')) {
+            data = '"' + data.replace(/"/g, '""') + '"';
+          }
+          row.push(data);
+        }
+        csv.push(row.join(','));
+      }
+      
+      // Create CSV file and download
+      const csvContent = 'data:text/csv;charset=utf-8,' + csv.join('\n');
+      const encodedUri = encodeURI(csvContent);
+      const link = document.createElement('a');
+      link.setAttribute('href', encodedUri);
+      link.setAttribute('download', 'expense_report.csv');
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+  });
+</script>
+{% endblock %}

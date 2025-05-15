@@ -1,0 +1,92 @@
+<!-- Advanced Filters Component -->
+<div class="card mb-4">
+  <div class="card-header d-flex justify-content-between align-items-center">
+    <h5 class="mb-0">
+      <i class="bi bi-funnel me-2"></i>Filters
+    </h5>
+    <button id="toggleAdvancedFilters" class="btn btn-sm btn-outline-primary">
+      <i class="bi bi-funnel me-1"></i>Show Advanced Filters
+    </button>
+  </div>
+  <div class="card-body">
+    <!-- Basic Search -->
+    <div class="mb-3">
+      <div class="input-group">
+        <span class="input-group-text"><i class="bi bi-search"></i></span>
+        <input type="text" id="searchInput" class="form-control" placeholder="Search transactions...">
+      </div>
+    </div>
+    
+    <!-- Advanced Filters (hidden by default) -->
+    <div id="advancedFilters" class="collapse">
+      <form id="filterForm">
+        <div class="row">
+          <!-- Date Range Filter -->
+          <div class="col-md-6 mb-3">
+            <label for="dateRange" class="form-label">Date Range</label>
+            <div class="input-group">
+              <span class="input-group-text"><i class="bi bi-calendar-range"></i></span>
+              <input type="text" id="dateRange" class="form-control" placeholder="Select date range">
+            </div>
+          </div>
+          
+          <!-- Category Filter -->
+          <div class="col-md-6 mb-3">
+            <label for="categoryFilter" class="form-label">Categories</label>
+            <select id="categoryFilter" class="form-select category-select" multiple>
+              <option value="default" selected>All Categories</option>
+              {% for category in categories %}
+              <option value="{{ category.name }}">{{ category.name }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          
+          <!-- Amount Range Filter -->
+          <div class="col-12 mb-3">
+            <label class="form-label">Amount Range</label>
+            <div id="amountRange" class="mt-2 mb-2" data-min="{{ min_amount|default(0) }}" data-max="{{ max_amount|default(10000) }}"></div>
+            <div class="row">
+              <div class="col-6">
+                <div class="input-group">
+                  <span class="input-group-text">Min</span>
+                  <input type="number" id="minAmount" class="form-control" value="{{ min_amount|default(0) }}">
+                </div>
+              </div>
+              <div class="col-6">
+                <div class="input-group">
+                  <span class="input-group-text">Max</span>
+                  <input type="number" id="maxAmount" class="form-control" value="{{ max_amount|default(10000) }}">
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Transaction Type Filter -->
+          <div class="col-md-6 mb-3">
+            <label class="form-label d-block">Transaction Type</label>
+            <div class="btn-group" role="group">
+              <input type="radio" class="btn-check" name="transactionType" id="typeAll" value="all" checked>
+              <label class="btn btn-outline-secondary" for="typeAll">All</label>
+              
+              <input type="radio" class="btn-check" name="transactionType" id="typeCR" value="CR">
+              <label class="btn btn-outline-success" for="typeCR">Income</label>
+              
+              <input type="radio" class="btn-check" name="transactionType" id="typeDR" value="DR">
+              <label class="btn btn-outline-danger" for="typeDR">Expense</label>
+            </div>
+          </div>
+          
+          <!-- Filter Buttons -->
+          <div class="col-md-6 mb-3 d-flex align-items-end">
+            <button type="button" id="applyFilters" class="btn btn-primary me-2">
+              <i class="bi bi-funnel-fill me-1"></i>Apply Filters
+            </button>
+            <button type="button" id="resetFilters" class="btn btn-outline-secondary">
+              <i class="bi bi-arrow-counterclockwise me-1"></i>Reset
+            </button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
