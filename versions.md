@@ -2,7 +2,36 @@
 
 This document tracks the version history of the Money Tracker application, detailing the features, improvements, and bug fixes introduced in each release.
 
-## Version 2.1.0 (Current)
+## Version 2.2.0 (Current)
+
+**Release Date:** May 2025
+
+### Major Features
+
+- **Dark Mode Support**
+  - Complete dark theme implementation across all pages
+  - Customizable dark mode toggle in user interface
+  - Persistent theme preference across sessions
+  - Optimized color scheme for reduced eye strain
+  - Automatic detection of system preference (where supported)
+
+### Improvements
+
+- Enhanced visual consistency across all components in dark mode
+- Improved contrast ratios for better accessibility
+- Smooth transition animations between light and dark modes
+- Optimized CSS variables for theme management
+- Better visual hierarchy in dark mode for improved usability
+
+### Technical Changes
+
+- Implemented CSS variables for theme color management
+- Added JavaScript for theme toggle functionality and persistence
+- Enhanced Bootstrap components with dark mode compatibility
+- Improved form elements and input styling in dark mode
+- Optimized chart and visualization colors for dark backgrounds
+
+## Version 2.1.0
 
 **Release Date:** July 2023
 
@@ -189,9 +218,8 @@ This document tracks the version history of the Money Tracker application, detai
 
 ## Future Roadmap
 
-### Planned for Version 2.2.0
+### Planned for Version 2.3.0
 
-- Dark mode support
 - Enhanced data visualization
 - Multi-currency support
 - Customizable dashboard widgets
