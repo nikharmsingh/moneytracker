@@ -67,7 +67,7 @@ function startGuidedTour() {
         steps = getDashboardTourSteps();
     } else if (window.location.pathname.includes('/add_expense')) {
         steps = getAddExpenseTourSteps();
-    } else if (window.location.pathname.includes('/reports_dashboard')) {
+    } else if (window.location.pathname.includes('/enhanced_features/reports_dashboard')) {
         steps = getReportsTourSteps();
     } else if (window.location.pathname.includes('/budget_overview')) {
         steps = getBudgetTourSteps();

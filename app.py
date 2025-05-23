@@ -986,9 +986,10 @@ def process_recurring_transactions():
                 print(f"Error processing recurring transactions: {str(e)}")
 
 # Enhanced Analytics and Reporting Routes
+
 @app.route('/reports')
 @login_required
-def reports_dashboard():
+def reports():
     """Main reports dashboard with links to different report types"""
     return render_template('reports/dashboard.html')
 

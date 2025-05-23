@@ -1,0 +1,432 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row mb-4">
+  <div class="col-12">
+    <div class="d-flex justify-content-between align-items-center">
+      <h1 class="h3 mb-0">
+        <i class="bi bi-card-list me-2"></i>Financial Report Cards
+      </h1>
+      <div>
+        <a href="{{ url_for('enhanced_features.reports_dashboard') }}" class="btn btn-outline-primary">
+          <i class="bi bi-bar-chart-fill me-1"></i>View Dashboard
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Monthly Summary Cards -->
+<div class="row mb-4">
+  <div class="col-12">
+    <h5 class="mb-3">
+      <i class="bi bi-calendar-month me-2"></i>Monthly Summary
+    </h5>
+  </div>
+  
+  <!-- Income Card -->
+  <div class="col-md-4 mb-4">
+    <div class="card h-100 border-0 shadow-sm">
+      <div class="card-body">
+        <div class="d-flex justify-content-between align-items-start mb-3">
+          <div>
+            <h6 class="card-title text-success mb-0">
+              <i class="bi bi-cash-stack me-2"></i>Monthly Income
+            </h6>
+            <small class="text-muted">Current Month</small>
+          </div>
+          <div class="badge bg-success rounded-pill">
+            <i class="bi bi-arrow-down"></i>
+          </div>
+        </div>
+        <h3 class="mb-2">₹{{ current_month_income|round(2)|format_currency }}</h3>
+        <div class="d-flex align-items-center">
+          {% if income_change > 0 %}
+            <span class="badge bg-success me-2"><i class="bi bi-arrow-up"></i> {{ income_change|round(1) }}%</span>
+            <small class="text-muted">vs last month</small>
+          {% elif income_change < 0 %}
+            <span class="badge bg-danger me-2"><i class="bi bi-arrow-down"></i> {{ (income_change * -1)|round(1) }}%</span>
+            <small class="text-muted">vs last month</small>
+          {% else %}
+            <span class="badge bg-secondary me-2"><i class="bi bi-dash"></i> 0%</span>
+            <small class="text-muted">vs last month</small>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Expenses Card -->
+  <div class="col-md-4 mb-4">
+    <div class="card h-100 border-0 shadow-sm">
+      <div class="card-body">
+        <div class="d-flex justify-content-between align-items-start mb-3">
+          <div>
+            <h6 class="card-title text-danger mb-0">
+              <i class="bi bi-credit-card me-2"></i>Monthly Expenses
+            </h6>
+            <small class="text-muted">Current Month</small>
+          </div>
+          <div class="badge bg-danger rounded-pill">
+            <i class="bi bi-arrow-up"></i>
+          </div>
+        </div>
+        <h3 class="mb-2">₹{{ current_month_expenses|round(2)|format_currency }}</h3>
+        <div class="d-flex align-items-center">
+          {% if expense_change > 0 %}
+            <span class="badge bg-danger me-2"><i class="bi bi-arrow-up"></i> {{ expense_change|round(1) }}%</span>
+            <small class="text-muted">vs last month</small>
+          {% elif expense_change < 0 %}
+            <span class="badge bg-success me-2"><i class="bi bi-arrow-down"></i> {{ (expense_change * -1)|round(1) }}%</span>
+            <small class="text-muted">vs last month</small>
+          {% else %}
+            <span class="badge bg-secondary me-2"><i class="bi bi-dash"></i> 0%</span>
+            <small class="text-muted">vs last month</small>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Savings Card -->
+  <div class="col-md-4 mb-4">
+    <div class="card h-100 border-0 shadow-sm">
+      <div class="card-body">
+        <div class="d-flex justify-content-between align-items-start mb-3">
+          <div>
+            <h6 class="card-title text-primary mb-0">
+              <i class="bi bi-piggy-bank me-2"></i>Savings Rate
+            </h6>
+            <small class="text-muted">Current Month</small>
+          </div>
+          <div class="badge bg-primary rounded-pill">
+            <i class="bi bi-percent"></i>
+          </div>
+        </div>
+        <h3 class="mb-2">{{ savings_rate|round(1) }}%</h3>
+        <div class="progress" style="height: 8px;">
+          {% if savings_rate < 10 %}
+            <div class="progress-bar bg-danger" role="progressbar" style="width: {{ savings_rate }}%"></div>
+          {% elif savings_rate < 20 %}
+            <div class="progress-bar bg-warning" role="progressbar" style="width: {{ savings_rate }}%"></div>
+          {% else %}
+            <div class="progress-bar bg-success" role="progressbar" style="width: {{ savings_rate }}%"></div>
+          {% endif %}
+        </div>
+        <small class="text-muted mt-2 d-block">
+          {% if savings_rate < 10 %}
+            <i class="bi bi-exclamation-triangle-fill text-danger me-1"></i>Your savings rate is low. Try to reduce expenses.
+          {% elif savings_rate < 20 %}
+            <i class="bi bi-info-circle-fill text-warning me-1"></i>Your savings rate is moderate. Aim for 20% or higher.
+          {% else %}
+            <i class="bi bi-check-circle-fill text-success me-1"></i>Great job! You're saving a healthy portion of your income.
+          {% endif %}
+        </small>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Budget Status Cards -->
+<div class="row mb-4">
+  <div class="col-12">
+    <h5 class="mb-3">
+      <i class="bi bi-clipboard-check me-2"></i>Budget Status
+    </h5>
+  </div>
+  
+  {% for budget in budget_status[:6] %}
+  <div class="col-md-4 mb-4">
+    <div class="card h-100 border-0 shadow-sm">
+      <div class="card-body">
+        <div class="d-flex justify-content-between align-items-start mb-3">
+          <div>
+            <h6 class="card-title mb-0">
+              {{ budget.category }}
+            </h6>
+            <small class="text-muted">Budget: ₹{{ budget.budget|round(2)|format_currency }}</small>
+          </div>
+          <div class="badge bg-{{ budget.status }} rounded-pill">
+            {{ budget.percentage|round(1) }}%
+          </div>
+        </div>
+        <div class="progress mb-2" style="height: 8px;">
+          <div class="progress-bar bg-{{ budget.status }}" role="progressbar" style="width: {{ min(budget.percentage, 100) }}%"></div>
+        </div>
+        <div class="d-flex justify-content-between align-items-center">
+          <small class="text-muted">Spent: ₹{{ budget.spent|round(2)|format_currency }}</small>
+          <small class="text-muted">Remaining: ₹{{ (budget.budget - budget.spent)|round(2)|format_currency }}</small>
+        </div>
+      </div>
+    </div>
+  </div>
+  {% else %}
+  <div class="col-12">
+    <div class="alert alert-info">
+      <i class="bi bi-info-circle me-2"></i>No budgets have been set up yet. <a href="{{ url_for('manage_budgets') }}">Create a budget</a> to track your spending.
+    </div>
+  </div>
+  {% endfor %}
+</div>
+
+<!-- Spending Insights Cards -->
+<div class="row mb-4">
+  <div class="col-12">
+    <h5 class="mb-3">
+      <i class="bi bi-graph-up me-2"></i>Spending Insights
+    </h5>
+  </div>
+  
+  <!-- Top Spending Categories -->
+  <div class="col-md-6 mb-4">
+    <div class="card h-100 border-0 shadow-sm">
+      <div class="card-header bg-transparent border-0">
+        <h6 class="mb-0">
+          <i class="bi bi-pie-chart me-2"></i>Top Spending Categories
+        </h6>
+      </div>
+      <div class="card-body">
+        {% if category_chart_data.labels %}
+          {% for i in range(min(5, category_chart_data.labels|length)) %}
+            <div class="mb-3">
+              <div class="d-flex justify-content-between mb-1">
+                <span>{{ category_chart_data.labels[i] }}</span>
+                <span class="fw-bold">₹{{ category_chart_data.data[i]|round(2)|format_currency }}</span>
+              </div>
+              <div class="progress" style="height: 6px;">
+                <div class="progress-bar" role="progressbar" 
+                     style="width: {{ (category_chart_data.data[i] / category_chart_data.data[0] * 100)|round }}%; 
+                            background-color: {{ ['#4e73df', '#1cc88a', '#36b9cc', '#f6c23e', '#e74a3b'][i % 5] }}"></div>
+              </div>
+            </div>
+          {% endfor %}
+        {% else %}
+          <div class="text-center py-3">
+            <i class="bi bi-bar-chart-steps text-muted" style="font-size: 2rem;"></i>
+            <p class="text-muted mt-2">No expense data available</p>
+          </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+  
+  <!-- Monthly Trend -->
+  <div class="col-md-6 mb-4">
+    <div class="card h-100 border-0 shadow-sm">
+      <div class="card-header bg-transparent border-0">
+        <h6 class="mb-0">
+          <i class="bi bi-graph-up-arrow me-2"></i>Monthly Spending Trend
+        </h6>
+      </div>
+      <div class="card-body">
+        <div class="chart-container" style="position: relative; height: 250px;">
+          <canvas id="miniTrendChart"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Financial Health Score -->
+<div class="row mb-4">
+  <div class="col-12">
+    <div class="card border-0 shadow-sm">
+      <div class="card-body">
+        <h5 class="card-title">
+          <i class="bi bi-heart-pulse me-2"></i>Financial Health Score
+        </h5>
+        
+        {% set budget_avg = 0 %}
+        {% if budget_status|length > 0 %}
+          {% set budget_sum = 0 %}
+          {% for budget in budget_status %}
+            {% set budget_sum = budget_sum + budget.percentage %}
+          {% endfor %}
+          {% set budget_avg = budget_sum / budget_status|length %}
+        {% endif %}
+        
+        {% set health_score = [
+          (savings_rate / 30) * 40,
+          (100 - min(100, budget_avg)) * 0.3,
+          (min(100, (current_month_income / max(1, current_month_expenses) * 50)))
+        ]|sum %}
+        
+        {% set health_score = min(100, health_score)|round|int %}
+        
+        <div class="row align-items-center">
+          <div class="col-md-3 text-center">
+            <div class="position-relative d-inline-block">
+              <svg width="120" height="120" viewBox="0 0 120 120">
+                <circle cx="60" cy="60" r="54" fill="none" stroke="#e6e6e6" stroke-width="12" />
+                <circle cx="60" cy="60" r="54" fill="none" stroke="
+                  {% if health_score < 40 %}#e74a3b
+                  {% elif health_score < 70 %}#f6c23e
+                  {% else %}#1cc88a{% endif %}" 
+                  stroke-width="12"
+                  stroke-dasharray="339.292"
+                  stroke-dashoffset="{{ 339.292 - (339.292 * health_score / 100) }}"
+                  transform="rotate(-90 60 60)" />
+              </svg>
+              <div class="position-absolute top-50 start-50 translate-middle">
+                <h3 class="mb-0">{{ health_score }}</h3>
+                <small class="text-muted">/ 100</small>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-9">
+            <h6>
+              {% if health_score < 40 %}
+                <i class="bi bi-exclamation-triangle-fill text-danger me-1"></i>Needs Attention
+              {% elif health_score < 70 %}
+                <i class="bi bi-info-circle-fill text-warning me-1"></i>Good, with Room for Improvement
+              {% else %}
+                <i class="bi bi-check-circle-fill text-success me-1"></i>Excellent Financial Health
+              {% endif %}
+            </h6>
+            <p class="mb-3">
+              {% if health_score < 40 %}
+                Your financial health needs attention. Focus on increasing your savings rate and staying within budget.
+              {% elif health_score < 70 %}
+                You're doing well, but there's room for improvement. Consider increasing your savings and reviewing your budget allocations.
+              {% else %}
+                Excellent job managing your finances! You're saving well and staying within your budgets.
+              {% endif %}
+            </p>
+            <div class="row">
+              <div class="col-md-4">
+                <div class="d-flex align-items-center mb-2">
+                  <div class="me-2">
+                    <i class="bi bi-piggy-bank{% if savings_rate >= 20 %}-fill{% endif %} 
+                      {% if savings_rate < 10 %}text-danger{% elif savings_rate < 20 %}text-warning{% else %}text-success{% endif %}"></i>
+                  </div>
+                  <div>
+                    <small class="d-block">Savings Rate</small>
+                    <span class="fw-bold">{{ savings_rate|round }}%</span>
+                  </div>
+                </div>
+              </div>
+              <div class="col-md-4">
+                <div class="d-flex align-items-center mb-2">
+                  <div class="me-2">
+                    <i class="bi bi-clipboard-check{% if budget_status and budget_avg <= 90 %}-fill{% endif %} 
+                      {% if not budget_status or budget_avg > 100 %}text-danger
+                      {% elif budget_avg > 90 %}text-warning
+                      {% else %}text-success{% endif %}"></i>
+                  </div>
+                  <div>
+                    <small class="d-block">Budget Adherence</small>
+                    <span class="fw-bold">
+                      {% if budget_status %}
+                        {{ budget_avg|round }}%
+                      {% else %}
+                        N/A
+                      {% endif %}
+                    </span>
+                  </div>
+                </div>
+              </div>
+              <div class="col-md-4">
+                <div class="d-flex align-items-center mb-2">
+                  <div class="me-2">
+                    <i class="bi bi-currency-exchange{% if current_month_income > current_month_expenses * 1.2 %}-fill{% endif %} 
+                      {% if current_month_income < current_month_expenses %}text-danger
+                      {% elif current_month_income < current_month_expenses * 1.2 %}text-warning
+                      {% else %}text-success{% endif %}"></i>
+                  </div>
+                  <div>
+                    <small class="d-block">Income/Expense Ratio</small>
+                    <span class="fw-bold">
+                      {% if current_month_expenses > 0 %}
+                        {{ (current_month_income / current_month_expenses)|round(1) }}x
+                      {% else %}
+                        N/A
+                      {% endif %}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    // Mini Trend Chart
+    const trendData = {{ trend_chart_data|tojson }};
+    const ctx = document.getElementById('miniTrendChart').getContext('2d');
+    
+    // Get the last 6 months of data
+    const labels = trendData.labels.slice(-6);
+    const expenses = trendData.expenses.slice(-6);
+    
+    new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: labels,
+        datasets: [{
+          label: 'Expenses',
+          data: expenses,
+          borderColor: '#e74a3b',
+          backgroundColor: 'rgba(231, 74, 59, 0.1)',
+          borderWidth: 2,
+          tension: 0.3,
+          fill: true
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            display: false
+          },
+          tooltip: {
+            mode: 'index',
+            intersect: false,
+            callbacks: {
+              label: function(context) {
+                let label = context.dataset.label || '';
+                if (label) {
+                  label += ': ';
+                }
+                if (context.parsed.y !== null) {
+                  label += new Intl.NumberFormat('en-US', {
+                    style: 'currency',
+                    currency: 'INR'
+                  }).format(context.parsed.y);
+                }
+                return label;
+              }
+            }
+          }
+        },
+        scales: {
+          x: {
+            grid: {
+              display: false
+            }
+          },
+          y: {
+            beginAtZero: true,
+            ticks: {
+              callback: function(value) {
+                return new Intl.NumberFormat('en-US', {
+                  style: 'currency',
+                  currency: 'INR',
+                  maximumSignificantDigits: 3
+                }).format(value);
+              }
+            }
+          }
+        }
+      }
+    });
+  });
+</script>
+{% endblock %}

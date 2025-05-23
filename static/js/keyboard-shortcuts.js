@@ -1,91 +1,121 @@
 // Keyboard Shortcuts for Money Tracker
 document.addEventListener('DOMContentLoaded', function() {
-    initKeyboardShortcuts();
-    createKeyboardShortcutsModal();
+    // Ensure Bootstrap is loaded before initializing keyboard shortcuts
+    setTimeout(function() {
+        initKeyboardShortcuts();
+        createKeyboardShortcutsModal();
+        console.log('Keyboard shortcuts initialized');
+    }, 500);
 });
 
 function initKeyboardShortcuts() {
+    // Remove any existing event listener to prevent duplicates
+    document.removeEventListener('keydown', handleKeyboardShortcut);
+    
     // Global keyboard event listener
-    document.addEventListener('keydown', function(event) {
-        // Don't trigger shortcuts when typing in input fields
-        if (event.target.tagName === 'INPUT' || event.target.tagName === 'TEXTAREA' || event.target.isContentEditable) {
-            return;
-        }
+    document.addEventListener('keydown', handleKeyboardShortcut);
+}
+
+function handleKeyboardShortcut(event) {
+    // Don't trigger shortcuts when typing in input fields
+    if (event.target.tagName === 'INPUT' || event.target.tagName === 'TEXTAREA' || event.target.isContentEditable) {
+        return;
+    }
+    
+    // Detect if user is on macOS
+    const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0;
+    
+    console.log('Key pressed:', event.key, 'Alt:', event.altKey, 'Meta:', event.metaKey, 'Ctrl:', event.ctrlKey, 'Shift:', event.shiftKey, 'Platform:', navigator.platform);
         
-        // Shift + ? to show keyboard shortcuts help
-        if (event.shiftKey && event.key === '?') {
-            event.preventDefault();
-            showKeyboardShortcutsModal();
-            return;
-        }
+    // Shift + ? to show keyboard shortcuts help
+    if (event.shiftKey && event.key === '?') {
+        event.preventDefault();
+        showKeyboardShortcutsModal();
+        return;
+    }
+    
+    // Navigation shortcuts - use Control key on macOS instead of Alt/Option
+    // This is because Alt/Option on macOS often produces special characters
+    if ((isMac && event.ctrlKey) || (!isMac && event.altKey)) {
+        // Convert key to lowercase to handle both cases
+        const key = event.key.toLowerCase();
         
-        // Navigation shortcuts
-        if (event.altKey) {
-            switch (event.key) {
-                case 'd': // Dashboard
-                    event.preventDefault();
-                    navigateTo('/');
-                    break;
-                case 'e': // Add Expense
-                    event.preventDefault();
-                    navigateTo('/add_expense');
-                    break;
-                case 'i': // Add Income
-                    event.preventDefault();
-                    navigateTo('/add_salary');
-                    break;
-                case 'b': // Budgets
-                    event.preventDefault();
-                    navigateTo('/manage_budgets');
-                    break;
-                case 'r': // Reports
-                    event.preventDefault();
-                    navigateTo('/reports_dashboard');
-                    break;
-                case 't': // Transactions
-                    event.preventDefault();
-                    navigateTo('/view_transactions');
-                    break;
-                case 'c': // Categories
-                    event.preventDefault();
-                    navigateTo('/manage_categories');
-                    break;
-                case 'p': // Profile
-                    event.preventDefault();
-                    navigateTo('/profile');
-                    break;
-                case 's': // Security Settings
-                    event.preventDefault();
-                    navigateTo('/security_settings');
-                    break;
-            }
+        switch (key) {
+            case 'd': // Dashboard
+                event.preventDefault();
+                navigateTo('/');
+                break;
+            case 'e': // Add Expense
+                event.preventDefault();
+                navigateTo('/add_expense');
+                break;
+            case 'i': // Add Income
+                event.preventDefault();
+                navigateTo('/add_salary');
+                break;
+            case 'b': // Budgets
+                event.preventDefault();
+                navigateTo('/manage_budgets');
+                break;
+            case 'r': // Reports Overview
+                event.preventDefault();
+                navigateTo('/reports');
+                break;
+            case 'd': // Enhanced Dashboard
+                event.preventDefault();
+                navigateTo('/enhanced_features/reports_dashboard');
+                break;
+            case 'a': // Report Cards
+                event.preventDefault();
+                navigateTo('/enhanced_features/report_cards');
+                break;
+            case 't': // Transactions
+                event.preventDefault();
+                navigateTo('/view_transactions');
+                break;
+            case 'c': // Categories
+                event.preventDefault();
+                navigateTo('/manage_categories');
+                break;
+            case 'p': // Profile
+                event.preventDefault();
+                navigateTo('/profile');
+                break;
+            case 's': // Security Settings
+                event.preventDefault();
+                navigateTo('/security_settings');
+                break;
         }
-        
-        // Function shortcuts (without modifiers)
-        switch (event.key) {
+    }
+    
+    // Function shortcuts (without modifiers)
+    // Convert key to lowercase for case-insensitive comparison
+    const keyLower = event.key.toLowerCase();
+    
+    // Only trigger these shortcuts if no modifier keys are pressed (except for Escape)
+    if (!event.ctrlKey && !event.metaKey && !event.altKey && keyLower !== 'escape') {
+        switch (keyLower) {
             case 'n': // New transaction
-                if (!event.ctrlKey && !event.metaKey && !event.altKey) {
-                    event.preventDefault();
-                    navigateTo('/add_expense');
-                }
+                event.preventDefault();
+                navigateTo('/add_expense');
                 break;
             case 'f': // Search/Filter
-                if (!event.ctrlKey && !event.metaKey && !event.altKey) {
-                    event.preventDefault();
-                    focusSearchField();
-                }
-                break;
-            case 'Escape': // Close modals
-                closeActiveModal();
+                event.preventDefault();
+                focusSearchField();
                 break;
         }
-        
-        // Dark mode toggle with Shift+D
-        if (event.shiftKey && event.key === 'D') {
-            event.preventDefault();
-            toggleDarkMode();
-        }
-    });
+    }
+    
+    // Escape works regardless of modifiers
+    if (event.key === 'Escape') {
+        closeActiveModal();
+    }
+    
+    // Dark mode toggle with Shift+D (case insensitive)
+    if (event.shiftKey && keyLower === 'd') {
+        event.preventDefault();
+        toggleDarkMode();
+    }
 }
 
 function navigateTo(path) {
@@ -142,6 +172,9 @@ function createKeyboardShortcutsModal() {
                             <button type="button" class="btn btn-sm btn-outline-primary platform-btn active" data-platform="windows">Windows/Linux</button>
                             <button type="button" class="btn btn-sm btn-outline-primary platform-btn" data-platform="mac">macOS</button>
                         </div>
+                        <div class="mt-2 small text-muted mac-note" style="display: none;">
+                            <i class="bi bi-info-circle"></i> On macOS, we use <strong>Ctrl</strong> instead of <strong>Option/Alt</strong> for navigation shortcuts to avoid conflicts with special characters.
+                        </div>
                     </div>
                     
                     <h6 class="mb-3">Navigation</h6>
@@ -151,7 +184,7 @@ function createKeyboardShortcutsModal() {
                             <span class="shortcut-key">Alt</span> + <span class="shortcut-key">D</span>
                         </div>
                         <div class="shortcut-keys mac-shortcut" style="display: none;">
-                            <span class="shortcut-key">Option</span> + <span class="shortcut-key">D</span>
+                            <span class="shortcut-key">Ctrl</span> + <span class="shortcut-key">D</span>
                         </div>
                     </div>
                     <div class="shortcut-row">
@@ -160,7 +193,7 @@ function createKeyboardShortcutsModal() {
                             <span class="shortcut-key">Alt</span> + <span class="shortcut-key">E</span>
                         </div>
                         <div class="shortcut-keys mac-shortcut" style="display: none;">
-                            <span class="shortcut-key">Option</span> + <span class="shortcut-key">E</span>
+                            <span class="shortcut-key">Ctrl</span> + <span class="shortcut-key">E</span>
                         </div>
                     </div>
                     <div class="shortcut-row">
@@ -169,7 +202,7 @@ function createKeyboardShortcutsModal() {
                             <span class="shortcut-key">Alt</span> + <span class="shortcut-key">I</span>
                         </div>
                         <div class="shortcut-keys mac-shortcut" style="display: none;">
-                            <span class="shortcut-key">Option</span> + <span class="shortcut-key">I</span>
+                            <span class="shortcut-key">Ctrl</span> + <span class="shortcut-key">I</span>
                         </div>
                     </div>
                     <div class="shortcut-row">
@@ -178,16 +211,34 @@ function createKeyboardShortcutsModal() {
                             <span class="shortcut-key">Alt</span> + <span class="shortcut-key">B</span>
                         </div>
                         <div class="shortcut-keys mac-shortcut" style="display: none;">
-                            <span class="shortcut-key">Option</span> + <span class="shortcut-key">B</span>
+                            <span class="shortcut-key">Ctrl</span> + <span class="shortcut-key">B</span>
                         </div>
                     </div>
                     <div class="shortcut-row">
-                        <div class="shortcut-description">Reports Dashboard</div>
+                        <div class="shortcut-description">Reports Overview</div>
                         <div class="shortcut-keys windows-shortcut">
                             <span class="shortcut-key">Alt</span> + <span class="shortcut-key">R</span>
                         </div>
                         <div class="shortcut-keys mac-shortcut" style="display: none;">
-                            <span class="shortcut-key">Option</span> + <span class="shortcut-key">R</span>
+                            <span class="shortcut-key">Ctrl</span> + <span class="shortcut-key">R</span>
+                        </div>
+                    </div>
+                    <div class="shortcut-row">
+                        <div class="shortcut-description">Enhanced Dashboard</div>
+                        <div class="shortcut-keys windows-shortcut">
+                            <span class="shortcut-key">Alt</span> + <span class="shortcut-key">D</span>
+                        </div>
+                        <div class="shortcut-keys mac-shortcut" style="display: none;">
+                            <span class="shortcut-key">Ctrl</span> + <span class="shortcut-key">D</span>
+                        </div>
+                    </div>
+                    <div class="shortcut-row">
+                        <div class="shortcut-description">Report Cards</div>
+                        <div class="shortcut-keys windows-shortcut">
+                            <span class="shortcut-key">Alt</span> + <span class="shortcut-key">A</span>
+                        </div>
+                        <div class="shortcut-keys mac-shortcut" style="display: none;">
+                            <span class="shortcut-key">Ctrl</span> + <span class="shortcut-key">A</span>
                         </div>
                     </div>
                     <div class="shortcut-row">
@@ -196,7 +247,7 @@ function createKeyboardShortcutsModal() {
                             <span class="shortcut-key">Alt</span> + <span class="shortcut-key">T</span>
                         </div>
                         <div class="shortcut-keys mac-shortcut" style="display: none;">
-                            <span class="shortcut-key">Option</span> + <span class="shortcut-key">T</span>
+                            <span class="shortcut-key">Ctrl</span> + <span class="shortcut-key">T</span>
                         </div>
                     </div>
                     <div class="shortcut-row">
@@ -205,7 +256,7 @@ function createKeyboardShortcutsModal() {
                             <span class="shortcut-key">Alt</span> + <span class="shortcut-key">C</span>
                         </div>
                         <div class="shortcut-keys mac-shortcut" style="display: none;">
-                            <span class="shortcut-key">Option</span> + <span class="shortcut-key">C</span>
+                            <span class="shortcut-key">Ctrl</span> + <span class="shortcut-key">C</span>
                         </div>
                     </div>
                     <div class="shortcut-row">
@@ -214,7 +265,7 @@ function createKeyboardShortcutsModal() {
                             <span class="shortcut-key">Alt</span> + <span class="shortcut-key">P</span>
                         </div>
                         <div class="shortcut-keys mac-shortcut" style="display: none;">
-                            <span class="shortcut-key">Option</span> + <span class="shortcut-key">P</span>
+                            <span class="shortcut-key">Ctrl</span> + <span class="shortcut-key">P</span>
                         </div>
                     </div>
                     <div class="shortcut-row">
@@ -223,7 +274,7 @@ function createKeyboardShortcutsModal() {
                             <span class="shortcut-key">Alt</span> + <span class="shortcut-key">S</span>
                         </div>
                         <div class="shortcut-keys mac-shortcut" style="display: none;">
-                            <span class="shortcut-key">Option</span> + <span class="shortcut-key">S</span>
+                            <span class="shortcut-key">Ctrl</span> + <span class="shortcut-key">S</span>
                         </div>
                     </div>
                     
@@ -298,9 +349,11 @@ function showKeyboardShortcutsModal() {
             if (platform === 'mac') {
                 document.querySelectorAll('.windows-shortcut').forEach(el => el.style.display = 'none');
                 document.querySelectorAll('.mac-shortcut').forEach(el => el.style.display = 'block');
+                document.querySelector('.mac-note').style.display = 'block';
             } else {
                 document.querySelectorAll('.mac-shortcut').forEach(el => el.style.display = 'none');
                 document.querySelectorAll('.windows-shortcut').forEach(el => el.style.display = 'block');
+                document.querySelector('.mac-note').style.display = 'none';
             }
         });
     });
@@ -310,6 +363,8 @@ function showKeyboardShortcutsModal() {
         const macButton = document.querySelector('.platform-btn[data-platform="mac"]');
         if (macButton) {
             macButton.click();
+            // Also show the macOS note
+            document.querySelector('.mac-note').style.display = 'block';
         }
     }
 }

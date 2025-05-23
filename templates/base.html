@@ -147,10 +147,27 @@
                 <i class="bi bi-arrow-repeat me-2"></i>Recurring Transactions
               </a>
             </li>
-            <li class="nav-item">
-              <a class="nav-link" href="{{ url_for('reports_dashboard') }}">
+            <li class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle" href="#" id="reportsDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                 <i class="bi bi-file-earmark-bar-graph me-2"></i>Reports & Analytics
               </a>
+              <ul class="dropdown-menu" aria-labelledby="reportsDropdown">
+                <li>
+                  <a class="dropdown-item" href="{{ url_for('reports') }}">
+                    <i class="bi bi-graph-up me-2"></i>Reports Overview
+                  </a>
+                </li>
+                <li>
+                  <a class="dropdown-item" href="{{ url_for('enhanced_features.reports_dashboard') }}">
+                    <i class="bi bi-bar-chart-fill me-2"></i>Enhanced Dashboard
+                  </a>
+                </li>
+                <li>
+                  <a class="dropdown-item" href="{{ url_for('enhanced_features.report_cards') }}">
+                    <i class="bi bi-card-list me-2"></i>Report Cards
+                  </a>
+                </li>
+              </ul>
             </li>
             <li class="nav-item">
               <a class="nav-link" href="{{ url_for('security_settings') }}">
@@ -338,8 +355,8 @@
   <!-- Enhanced UX Features -->
   <script src="{{ url_for('static', filename='js/utility.js') }}"></script>
   <script src="{{ url_for('static', filename='js/guided-tour.js') }}"></script>
-  <script src="{{ url_for('static', filename='js/keyboard-shortcuts.js') }}"></script>
-  <script src="{{ url_for('static', filename='js/voice-input.js') }}"></script>
+  <!-- Load keyboard shortcuts with defer to ensure DOM is fully loaded -->
+  <script src="{{ url_for('static', filename='js/keyboard-shortcuts.js') }}" defer></script>
   <script src="{{ url_for('static', filename='js/feedback.js') }}"></script>
   
   <!-- Offline detection -->

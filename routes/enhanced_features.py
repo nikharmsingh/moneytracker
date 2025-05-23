@@ -19,6 +19,13 @@ def reports_dashboard():
     # Get all user categories
     categories = Category.get_by_user(current_user.id)
     
+    # Create a mapping of category IDs to category objects
+    category_dict = {str(c.id): c for c in categories}
+    
+    # Add category_name attribute to each expense for easier display
+    for expense in expenses:
+        expense.category_name = category_dict.get(expense.category_id, 'Uncategorized')
+    
     # Get all user budgets
     budgets = Budget.get_by_user(current_user.id)
     
@@ -35,6 +42,12 @@ def reports_dashboard():
     
     # Prepare data for category distribution chart
     category_chart_data = prepare_category_chart_data(expenses)
+    
+    # Create a mapping of category IDs to names for better display
+    category_dict = {str(c.id): c.name for c in categories}
+    
+    # Replace category IDs with category names in the chart data
+    category_chart_data['labels'] = [category_dict.get(label, 'Uncategorized') for label in category_chart_data['labels']]
     
     # Prepare data for trend analysis chart
     trend_chart_data = prepare_trend_chart_data(expenses, salaries)
@@ -55,6 +68,97 @@ def reports_dashboard():
                           trend_chart_data=trend_chart_data,
                           budget_chart_data=budget_chart_data,
                           savings_chart_data=savings_chart_data)
+
+@enhanced_features.route('/report_cards')
+@login_required
+def report_cards():
+    """Report cards page showing different financial insights"""
+    # Get all user expenses
+    expenses = Expense.get_by_user(current_user.id)
+    
+    # Get all user categories
+    categories = Category.get_by_user(current_user.id)
+    
+    # Get all user budgets
+    budgets = Budget.get_by_user(current_user.id)
+    
+    # Get all user salaries
+    salaries = Salary.get_by_user(current_user.id)
+    
+    # Prepare data for trend analysis chart
+    trend_chart_data = prepare_trend_chart_data(expenses, salaries)
+    
+    # Prepare data for category distribution chart
+    category_chart_data = prepare_category_chart_data(expenses)
+    
+    # Create a mapping of category IDs to names for better display
+    category_dict = {str(c.id): c.name for c in categories}
+    
+    # Replace category IDs with category names in the chart data
+    category_chart_data['labels'] = [category_dict.get(label, 'Uncategorized') for label in category_chart_data['labels']]
+    
+    # Calculate total income and expenses for the current month
+    today = datetime.now()
+    current_month = today.strftime('%Y-%m')
+    
+    current_month_expenses = sum(expense.amount for expense in expenses 
+                               if expense.date.strftime('%Y-%m') == current_month 
+                               and expense.transaction_type == 'DR')
+    
+    current_month_income = sum(salary.amount for salary in salaries 
+                             if salary.date.strftime('%Y-%m') == current_month)
+    
+    current_month_income += sum(expense.amount for expense in expenses 
+                              if expense.date.strftime('%Y-%m') == current_month 
+                              and expense.transaction_type == 'CR')
+    
+    # Calculate savings rate
+    savings_rate = ((current_month_income - current_month_expenses) / current_month_income * 100) if current_month_income > 0 else 0
+    
+    # Calculate budget status
+    budget_status = []
+    for budget in budgets:
+        category_name = category_dict.get(budget.category_id, 'Uncategorized')
+        category_expenses = sum(expense.amount for expense in expenses 
+                              if expense.category_id == budget.category_id 
+                              and expense.date.strftime('%Y-%m') == current_month
+                              and expense.transaction_type == 'DR')
+        
+        percentage = (category_expenses / budget.amount * 100) if budget.amount > 0 else 0
+        status = 'success' if percentage <= 75 else 'warning' if percentage <= 100 else 'danger'
+        
+        budget_status.append({
+            'category': category_name,
+            'budget': budget.amount,
+            'spent': category_expenses,
+            'percentage': percentage,
+            'status': status
+        })
+    
+    # Sort budget status by percentage (descending)
+    budget_status.sort(key=lambda x: x['percentage'], reverse=True)
+    
+    # Calculate month-over-month changes
+    if len(trend_chart_data['expenses']) >= 2:
+        expense_change = ((trend_chart_data['expenses'][-1] - trend_chart_data['expenses'][-2]) / 
+                         trend_chart_data['expenses'][-2] * 100) if trend_chart_data['expenses'][-2] > 0 else 0
+        income_change = ((trend_chart_data['income'][-1] - trend_chart_data['income'][-2]) / 
+                        trend_chart_data['income'][-2] * 100) if trend_chart_data['income'][-2] > 0 else 0
+    else:
+        expense_change = 0
+        income_change = 0
+    
+    return render_template('report_cards.html',
+                          expenses=expenses,
+                          categories=categories,
+                          trend_chart_data=trend_chart_data,
+                          category_chart_data=category_chart_data,
+                          current_month_expenses=current_month_expenses,
+                          current_month_income=current_month_income,
+                          savings_rate=savings_rate,
+                          budget_status=budget_status,
+                          expense_change=expense_change,
+                          income_change=income_change)
 
 @enhanced_features.route('/api/filter_expenses', methods=['POST'])
 @login_required
@@ -88,7 +192,7 @@ def filter_expenses():
             continue
         
         # Category filter
-        if categories and expense.category not in categories and 'All Categories' not in categories:
+        if categories and expense.category_id not in categories and 'All Categories' not in categories:
             continue
         
         # Amount filter
@@ -110,7 +214,7 @@ def filter_expenses():
             'date': expense.date.strftime('%Y-%m-%d'),
             'description': expense.description,
             'amount': expense.amount,
-            'category': expense.category,
+            'category_id': expense.category_id,
             'transaction_type': expense.transaction_type
         })
     
@@ -188,13 +292,13 @@ def prepare_category_chart_data(expenses):
     # Only include expenses (DR transactions)
     dr_expenses = [expense for expense in expenses if expense.transaction_type == 'DR']
     
-    # Group by category
+    # Group by category_id
     categories = {}
     for expense in dr_expenses:
-        if expense.category in categories:
-            categories[expense.category] += expense.amount
+        if expense.category_id in categories:
+            categories[expense.category_id] += expense.amount
         else:
-            categories[expense.category] = expense.amount
+            categories[expense.category_id] = expense.amount
     
     # Sort by amount (descending)
     sorted_categories = sorted(categories.items(), key=lambda x: x[1], reverse=True)
@@ -203,7 +307,7 @@ def prepare_category_chart_data(expenses):
     top_categories = sorted_categories[:10]
     
     # Prepare chart data
-    labels = [category for category, _ in top_categories]
+    labels = [category_id for category_id, _ in top_categories]
     data = [amount for _, amount in top_categories]
     
     return {
@@ -272,27 +376,32 @@ def prepare_budget_chart_data(expenses, budgets):
         if expense.date.strftime('%Y-%m') == current_month and expense.transaction_type == 'DR'
     ]
     
-    # Group expenses by category
+    # Group expenses by category_id
     category_expenses = {}
     for expense in current_month_expenses:
-        if expense.category in category_expenses:
-            category_expenses[expense.category] += expense.amount
+        if expense.category_id in category_expenses:
+            category_expenses[expense.category_id] += expense.amount
         else:
-            category_expenses[expense.category] = expense.amount
+            category_expenses[expense.category_id] = expense.amount
     
-    # Get budget amounts for each category
+    # Get budget amounts for each category_id
     budget_amounts = {}
     for budget in budgets:
-        budget_amounts[budget.category] = budget.amount
+        budget_amounts[budget.category_id] = budget.amount
     
     # Prepare chart data (only for categories with budgets)
     labels = []
     actual_data = []
     budget_data = []
     
-    for category, budget_amount in budget_amounts.items():
-        labels.append(category)
-        actual_data.append(category_expenses.get(category, 0))
+    # Create a mapping of category IDs to names for better display
+    category_dict = {str(c.id): c.name for c in Category.get_by_user(current_user.id)}
+    
+    for category_id, budget_amount in budget_amounts.items():
+        # Use category name for display, or "Uncategorized" if not found
+        category_name = category_dict.get(category_id, 'Uncategorized')
+        labels.append(category_name)
+        actual_data.append(category_expenses.get(category_id, 0))
         budget_data.append(budget_amount)
     
     return {

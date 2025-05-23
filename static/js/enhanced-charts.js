@@ -89,7 +89,7 @@ function initializeExpenseChart() {
                             if (context.parsed.y !== null) {
                                 label += new Intl.NumberFormat('en-US', { 
                                     style: 'currency', 
-                                    currency: 'USD',
+                                    currency: 'INR',
                                     minimumFractionDigits: 0,
                                     maximumFractionDigits: 0
                                 }).format(context.parsed.y);
@@ -111,7 +111,7 @@ function initializeExpenseChart() {
                         callback: function(value) {
                             return new Intl.NumberFormat('en-US', { 
                                 style: 'currency', 
-                                currency: 'USD',
+                                currency: 'INR',
                                 minimumFractionDigits: 0,
                                 maximumFractionDigits: 0
                             }).format(value);
@@ -167,7 +167,7 @@ function initializeCategoryChart() {
                             if (context.parsed !== null) {
                                 label += new Intl.NumberFormat('en-US', { 
                                     style: 'currency', 
-                                    currency: 'USD',
+                                    currency: 'INR',
                                     minimumFractionDigits: 0,
                                     maximumFractionDigits: 0
                                 }).format(context.parsed);
@@ -257,7 +257,7 @@ function initializeTrendChart() {
                             if (context.parsed.y !== null) {
                                 label += new Intl.NumberFormat('en-US', { 
                                     style: 'currency', 
-                                    currency: 'USD',
+                                    currency: 'INR',
                                     minimumFractionDigits: 0,
                                     maximumFractionDigits: 0
                                 }).format(context.parsed.y);
@@ -279,7 +279,7 @@ function initializeTrendChart() {
                         callback: function(value) {
                             return new Intl.NumberFormat('en-US', { 
                                 style: 'currency', 
-                                currency: 'USD',
+                                currency: 'INR',
                                 minimumFractionDigits: 0,
                                 maximumFractionDigits: 0
                             }).format(value);
@@ -356,7 +356,7 @@ function initializeBudgetChart() {
                             if (context.parsed.y !== null) {
                                 label += new Intl.NumberFormat('en-US', { 
                                     style: 'currency', 
-                                    currency: 'USD',
+                                    currency: 'INR',
                                     minimumFractionDigits: 0,
                                     maximumFractionDigits: 0
                                 }).format(context.parsed.y);
@@ -374,14 +374,14 @@ function initializeBudgetChart() {
                                 if (diff >= 0) {
                                     return `${percentage}% of budget (${new Intl.NumberFormat('en-US', { 
                                         style: 'currency', 
-                                        currency: 'USD',
+                                        currency: 'INR',
                                         minimumFractionDigits: 0,
                                         maximumFractionDigits: 0
                                     }).format(diff)} under budget)`;
                                 } else {
                                     return `${percentage}% of budget (${new Intl.NumberFormat('en-US', { 
                                         style: 'currency', 
-                                        currency: 'USD',
+                                        currency: 'INR',
                                         minimumFractionDigits: 0,
                                         maximumFractionDigits: 0
                                     }).format(Math.abs(diff))} over budget)`;
@@ -404,7 +404,7 @@ function initializeBudgetChart() {
                         callback: function(value) {
                             return new Intl.NumberFormat('en-US', { 
                                 style: 'currency', 
-                                currency: 'USD',
+                                currency: 'INR',
                                 minimumFractionDigits: 0,
                                 maximumFractionDigits: 0
                             }).format(value);
@@ -481,7 +481,7 @@ function initializeSavingsChart() {
                             if (context.parsed.y !== null) {
                                 label += new Intl.NumberFormat('en-US', { 
                                     style: 'currency', 
-                                    currency: 'USD',
+                                    currency: 'INR',
                                     minimumFractionDigits: 0,
                                     maximumFractionDigits: 0
                                 }).format(context.parsed.y);
@@ -504,7 +504,7 @@ function initializeSavingsChart() {
                         callback: function(value) {
                             return new Intl.NumberFormat('en-US', { 
                                 style: 'currency', 
-                                currency: 'USD',
+                                currency: 'INR',
                                 minimumFractionDigits: 0,
                                 maximumFractionDigits: 0
                             }).format(value);
@@ -521,7 +521,7 @@ function initializeSavingsChart() {
                         callback: function(value) {
                             return new Intl.NumberFormat('en-US', { 
                                 style: 'currency', 
-                                currency: 'USD',
+                                currency: 'INR',
                                 minimumFractionDigits: 0,
                                 maximumFractionDigits: 0
                             }).format(value);

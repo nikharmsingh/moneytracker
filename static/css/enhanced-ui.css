@@ -187,37 +187,7 @@
     color: white;
 }
 
-/* Voice Input Styles */
-.voice-input-button {
-    position: absolute;
-    right: 10px;
-    top: 50%;
-    transform: translateY(-50%);
-    background: none;
-    border: none;
-    color: #6c757d;
-    cursor: pointer;
-    transition: color 0.2s ease;
-}
 
-.voice-input-button:hover {
-    color: #0d6efd;
-}
-
-.voice-input-button.recording {
-    color: #dc3545;
-    animation: pulse 1.5s infinite;
-}
-
-@keyframes pulse {
-    0% { transform: translateY(-50%) scale(1); }
-    50% { transform: translateY(-50%) scale(1.2); }
-    100% { transform: translateY(-50%) scale(1); }
-}
-
-.voice-input-container {
-    position: relative;
-}
 
 /* Custom Dashboard Widgets */
 .widget-container {
