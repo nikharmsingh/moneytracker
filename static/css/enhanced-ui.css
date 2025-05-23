@@ -1,49 +1,50 @@
 /* Enhanced UI Components for Money Tracker */
 
-/* Dashboard Customization */
+/* Dashboard */
 .dashboard-container {
     min-height: 200px;
     position: relative;
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-    gap: 1.5rem;
     margin-bottom: 1.5rem;
 }
 
 .dashboard-widget {
     margin-bottom: 1.5rem;
     position: relative;
-    grid-column: span 1;
 }
 
-/* Make certain widgets span the full width */
+/* Layout for specific widgets */
 .dashboard-widget[data-widget="financial-summary"],
-.dashboard-widget[data-widget="recent-transactions"] {
-    grid-column: 1 / -1;
+.dashboard-widget[data-widget="budget-overview"] {
+    width: 100%;
+    display: block;
 }
 
-.widget-drag-handle {
-    cursor: move;
-    opacity: 0.5;
-    transition: opacity 0.2s ease;
-    position: absolute;
-    top: 10px;
-    right: 10px;
-    z-index: 10;
-    background-color: rgba(0, 0, 0, 0.1);
-    border-radius: 4px;
-    padding: 4px;
+/* Create a row for the side-by-side widgets */
+.dashboard-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+    margin-bottom: 1.5rem;
 }
 
-.widget-drag-handle:hover {
-    opacity: 1;
+.dashboard-row .dashboard-widget {
+    flex: 1;
+    min-width: 45%;
+    margin-bottom: 0;
 }
 
-.sortable-ghost {
-    opacity: 0.5;
-    background-color: #f8f9fa;
-    border: 2px dashed #dee2e6;
+/* Responsive layout for smaller screens */
+@media (max-width: 992px) {
+    .dashboard-row {
+        flex-direction: column;
+    }
+    
+    .dashboard-row .dashboard-widget {
+        width: 100%;
+    }
 }
+
+/* Removed widget drag handle styles */
 
 /* Guided Tour Styles */
 .tour-tooltip {
@@ -172,6 +173,18 @@
 
 .keyboard-shortcuts-modal .shortcut-keys {
     text-align: right;
+    min-width: 120px;
+}
+
+.keyboard-shortcuts-modal .platform-toggle {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 20px;
+}
+
+.keyboard-shortcuts-modal .platform-btn.active {
+    background-color: #0d6efd;
+    color: white;
 }
 
 /* Voice Input Styles */
@@ -259,6 +272,16 @@ body.dark-mode .keyboard-shortcuts-modal .shortcut-key {
 
 body.dark-mode .keyboard-shortcuts-modal .shortcut-row {
     border-bottom-color: #495057;
+}
+
+body.dark-mode .keyboard-shortcuts-modal .platform-btn {
+    border-color: #6c757d;
+    color: #e9ecef;
+}
+
+body.dark-mode .keyboard-shortcuts-modal .platform-btn.active {
+    background-color: #0d6efd;
+    color: white;
 }
 
 body.dark-mode .widget-drag-handle {

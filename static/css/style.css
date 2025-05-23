@@ -145,7 +145,6 @@ h1, h2, h3, h4, h5, h6 {
 .table {
   background-color: white;
   margin-bottom: 0;
-  white-space: nowrap; /* Prevent text wrapping in tables */
 }
 
 .table thead th {
@@ -159,6 +158,19 @@ h1, h2, h3, h4, h5, h6 {
 
 .table tbody tr:hover {
   background-color: rgba(0, 0, 0, 0.02);
+}
+
+/* Allow text wrapping for transaction descriptions */
+.table td {
+  white-space: nowrap; /* Keep most cells as nowrap */
+}
+
+.table td.text-wrap,
+.table td.description-cell {
+  white-space: normal; /* Allow wrapping for description cells */
+  word-break: break-word; /* Break words if needed */
+  min-width: 150px; /* Minimum width for description cells */
+  max-width: 300px; /* Maximum width for description cells */
 }
 
 /* Touch-friendly buttons */
@@ -277,6 +289,14 @@ h1, h2, h3, h4, h5, h6 {
   /* Adjust form spacing */
   .mb-3 {
     margin-bottom: 0.75rem !important;
+  }
+  
+  /* Improve transaction item display on mobile */
+  .transaction-item .text-wrap {
+    max-width: 70%;
+    word-break: break-word;
+    line-height: 1.4;
+    margin-bottom: 0.25rem;
   }
 }
 

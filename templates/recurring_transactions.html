@@ -45,7 +45,7 @@
               <tbody>
                 {% for expense in recurring_expenses %}
                 <tr>
-                  <td>{{ expense.description }}</td>
+                  <td class="description-cell">{{ expense.description }}</td>
                   <td>{{ expense.category_name }}</td>
                   <td class="text-danger">₹{{ expense.amount|format_currency }}</td>
                   <td>
@@ -117,7 +117,7 @@
               <tbody>
                 {% for salary in recurring_salaries %}
                 <tr>
-                  <td>{{ salary.description }}</td>
+                  <td class="description-cell">{{ salary.description }}</td>
                   <td class="text-success">₹{{ salary.amount|format_currency }}</td>
                   <td>
                     <span class="badge bg-secondary">{{ salary.recurrence_type|capitalize }}</span>

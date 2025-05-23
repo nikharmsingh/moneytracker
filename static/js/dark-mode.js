@@ -3,6 +3,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Check for saved dark mode preference
     const darkModeEnabled = localStorage.getItem('darkModeEnabled') === 'true';
     const darkModeToggle = document.getElementById('darkModeToggle');
+    const toggleLabel = document.querySelector('.checkbox-label');
     
     // Apply dark mode if enabled
     if (darkModeEnabled) {
@@ -13,6 +14,17 @@ document.addEventListener('DOMContentLoaded', function() {
         setTimeout(() => {
             document.documentElement.style.setProperty('--theme-transition', 'background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease');
         }, 300);
+    }
+    
+    // Add hover effect for the toggle
+    if (toggleLabel) {
+        toggleLabel.addEventListener('mouseenter', function() {
+            this.classList.add('toggle-hover');
+        });
+        
+        toggleLabel.addEventListener('mouseleave', function() {
+            this.classList.remove('toggle-hover');
+        });
     }
     
     // Toggle dark mode when switch is clicked with enhanced animation
