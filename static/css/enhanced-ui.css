@@ -1,0 +1,283 @@
+/* Enhanced UI Components for Money Tracker */
+
+/* Dashboard Customization */
+.dashboard-container {
+    min-height: 200px;
+    position: relative;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.dashboard-widget {
+    margin-bottom: 1.5rem;
+    position: relative;
+    grid-column: span 1;
+}
+
+/* Make certain widgets span the full width */
+.dashboard-widget[data-widget="financial-summary"],
+.dashboard-widget[data-widget="recent-transactions"] {
+    grid-column: 1 / -1;
+}
+
+.widget-drag-handle {
+    cursor: move;
+    opacity: 0.5;
+    transition: opacity 0.2s ease;
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    z-index: 10;
+    background-color: rgba(0, 0, 0, 0.1);
+    border-radius: 4px;
+    padding: 4px;
+}
+
+.widget-drag-handle:hover {
+    opacity: 1;
+}
+
+.sortable-ghost {
+    opacity: 0.5;
+    background-color: #f8f9fa;
+    border: 2px dashed #dee2e6;
+}
+
+/* Guided Tour Styles */
+.tour-tooltip {
+    position: absolute;
+    z-index: 9999;
+    background-color: white;
+    border-radius: 8px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+    padding: 15px;
+    max-width: 300px;
+    animation: tooltip-fade-in 0.3s ease;
+}
+
+@keyframes tooltip-fade-in {
+    from { opacity: 0; transform: scale(0.9); }
+    to { opacity: 1; transform: scale(1); }
+}
+
+.tour-tooltip-header {
+    border-bottom: 1px solid #eee;
+    margin-bottom: 10px;
+    padding-bottom: 5px;
+}
+
+.tour-tooltip-header h5 {
+    margin: 0;
+    font-size: 1.1rem;
+    color: #333;
+}
+
+.tour-tooltip-body {
+    margin-bottom: 15px;
+}
+
+.tour-tooltip-body p {
+    margin: 0;
+    color: #666;
+}
+
+.tour-tooltip-footer {
+    display: flex;
+    justify-content: space-between;
+}
+
+.tour-tooltip-arrow {
+    position: absolute;
+    width: 12px;
+    height: 12px;
+    background-color: white;
+    transform: rotate(45deg);
+}
+
+.tour-tooltip.position-top .tour-tooltip-arrow {
+    bottom: -6px;
+    left: 50%;
+    margin-left: -6px;
+}
+
+.tour-tooltip.position-bottom .tour-tooltip-arrow {
+    top: -6px;
+    left: 50%;
+    margin-left: -6px;
+}
+
+.tour-tooltip.position-left .tour-tooltip-arrow {
+    right: -6px;
+    top: 50%;
+    margin-top: -6px;
+}
+
+.tour-tooltip.position-right .tour-tooltip-arrow {
+    left: -6px;
+    top: 50%;
+    margin-top: -6px;
+}
+
+.tour-highlight-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    z-index: 9990;
+    pointer-events: none;
+}
+
+.tour-highlight {
+    position: absolute;
+    z-index: 9991;
+    border-radius: 4px;
+    box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.5), 0 0 0 8px rgba(0, 123, 255, 0.5);
+    pointer-events: none;
+    animation: highlight-pulse 1.5s infinite;
+}
+
+@keyframes highlight-pulse {
+    0% { box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.5), 0 0 0 8px rgba(0, 123, 255, 0.5); }
+    50% { box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.5), 0 0 0 12px rgba(0, 123, 255, 0.3); }
+    100% { box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.5), 0 0 0 8px rgba(0, 123, 255, 0.5); }
+}
+
+/* Keyboard Shortcuts Help */
+.keyboard-shortcuts-modal .shortcut-key {
+    display: inline-block;
+    background-color: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: 4px;
+    padding: 2px 6px;
+    margin: 0 2px;
+    font-family: monospace;
+    font-weight: bold;
+}
+
+.keyboard-shortcuts-modal .shortcut-row {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 10px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #eee;
+}
+
+.keyboard-shortcuts-modal .shortcut-description {
+    flex-grow: 1;
+}
+
+.keyboard-shortcuts-modal .shortcut-keys {
+    text-align: right;
+}
+
+/* Voice Input Styles */
+.voice-input-button {
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    color: #6c757d;
+    cursor: pointer;
+    transition: color 0.2s ease;
+}
+
+.voice-input-button:hover {
+    color: #0d6efd;
+}
+
+.voice-input-button.recording {
+    color: #dc3545;
+    animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+    0% { transform: translateY(-50%) scale(1); }
+    50% { transform: translateY(-50%) scale(1.2); }
+    100% { transform: translateY(-50%) scale(1); }
+}
+
+.voice-input-container {
+    position: relative;
+}
+
+/* Custom Dashboard Widgets */
+.widget-container {
+    border-radius: 8px;
+    overflow: hidden;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.widget-container:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+}
+
+.widget-header {
+    padding: 15px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.widget-body {
+    padding: 15px;
+}
+
+/* Dark mode support for new components */
+body.dark-mode .tour-tooltip {
+    background-color: #343a40;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+}
+
+body.dark-mode .tour-tooltip-header {
+    border-bottom-color: #495057;
+}
+
+body.dark-mode .tour-tooltip-header h5 {
+    color: #e9ecef;
+}
+
+body.dark-mode .tour-tooltip-body p {
+    color: #ced4da;
+}
+
+body.dark-mode .tour-tooltip-arrow {
+    background-color: #343a40;
+}
+
+body.dark-mode .keyboard-shortcuts-modal .shortcut-key {
+    background-color: #495057;
+    border-color: #6c757d;
+    color: #e9ecef;
+}
+
+body.dark-mode .keyboard-shortcuts-modal .shortcut-row {
+    border-bottom-color: #495057;
+}
+
+body.dark-mode .widget-drag-handle {
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .tour-tooltip {
+        max-width: 250px;
+    }
+    
+    .widget-header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    
+    .widget-header .widget-actions {
+        margin-top: 10px;
+        align-self: flex-end;
+    }
+}

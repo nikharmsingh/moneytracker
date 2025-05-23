@@ -2,7 +2,38 @@
 
 This document tracks the version history of the Money Tracker application, detailing the features, improvements, and bug fixes introduced in each release.
 
-## Version 2.2.0 (Current)
+## Version 2.3.0 (Current)
+
+**Release Date:** June 2025
+
+### Major Features
+
+- **Enhanced User Experience**
+  - Customizable dashboard with drag-and-drop widget arrangement
+  - Interactive guided tours for new users
+  - Keyboard shortcuts for power users
+  - Voice input for adding transactions
+  - Comprehensive help system and feedback mechanism
+
+### Improvements
+
+- Personalized dashboard with savable layouts and widget visibility options
+- Context-aware guided tours that adapt to different pages
+- Keyboard navigation and shortcuts for faster workflow
+- Voice recognition for natural language transaction input
+- Enhanced help menu with quick access to common actions
+- User feedback system for reporting issues and suggesting features
+
+### Technical Changes
+
+- Implemented SortableJS for drag-and-drop functionality
+- Added Web Speech API integration for voice recognition
+- Created modular JavaScript components for UI enhancements
+- Improved CSS with animations and transitions for better feedback
+- Enhanced keyboard event handling for shortcuts
+- Added tour system with highlighting and tooltips
+
+## Version 2.2.0
 
 **Release Date:** May 2025
 
@@ -218,12 +249,12 @@ This document tracks the version history of the Money Tracker application, detai
 
 ## Future Roadmap
 
-### Planned for Version 2.3.0
+### Planned for Version 2.4.0
 
 - Enhanced data visualization
 - Multi-currency support
-- Customizable dashboard widgets
 - Advanced filtering and search capabilities
+- AI-powered transaction categorization
 
 ### Planned for Version 2.5.0
 

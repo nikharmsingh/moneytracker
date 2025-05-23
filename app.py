@@ -1396,6 +1396,7 @@ def service_worker():
     """Serve the service worker at the root path for proper scope."""
     return app.send_static_file('js/service-worker.js')
 
+@app.route('/')
 @app.route('/dashboard')
 @login_required
 def index():

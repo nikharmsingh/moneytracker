@@ -1,11 +1,21 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="row">
-  <div class="col-md-12 mb-4">
+<!-- Dashboard Container with Customizable Widgets -->
+<div class="dashboard-container">
+  <!-- Financial Summary Widget -->
+  <div class="dashboard-widget" data-widget="financial-summary">
+    <div class="widget-drag-handle">
+      <i class="bi bi-grip-horizontal"></i>
+    </div>
     <div class="card">
-      <div class="card-header">
+      <div class="card-header d-flex justify-content-between align-items-center">
         <h3 class="mb-0">Financial Summary</h3>
+        <div>
+          <button type="button" class="btn btn-sm btn-outline-primary" id="start-tour-btn">
+            <i class="bi bi-info-circle me-1"></i>Tour
+          </button>
+        </div>
       </div>
       <div class="card-body">
         <!-- Overall Summary (Larger) -->
@@ -57,10 +67,26 @@
             </div>
           </div>
         </div>
-        
-        <!-- Budget Overview Section -->
+      </div>
+    </div>
+  </div>
+  
+  <!-- Budget Overview Widget -->
+  <div class="dashboard-widget" data-widget="budget-overview">
+    <div class="widget-drag-handle">
+      <i class="bi bi-grip-horizontal"></i>
+    </div>
+    <div class="card">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <h3 class="mb-0">Budget Overview</h3>
+        <div>
+          <a href="{{ url_for('add_budget') }}" class="btn btn-sm btn-primary">
+            <i class="bi bi-plus-circle me-1"></i>Add Budget
+          </a>
+        </div>
+      </div>
+      <div class="card-body">
         {% if active_budgets %}
-        <h5 class="mb-3 mt-4">Budget Overview</h5>
         <div class="row">
           {% for budget in top_budgets %}
           <div class="col-md-4 mb-3">
@@ -124,23 +150,21 @@
           {% endif %}
         </div>
         {% else %}
-        <div class="row mt-4">
-          <div class="col-12">
-            <div class="alert alert-info">
-              <i class="bi bi-info-circle me-2"></i>
-              You don't have any active budgets. 
-              <a href="{{ url_for('add_budget') }}" class="alert-link">Create a budget</a> to track your spending.
-            </div>
-          </div>
+        <div class="alert alert-info">
+          <i class="bi bi-info-circle me-2"></i>
+          You don't have any active budgets. 
+          <a href="{{ url_for('add_budget') }}" class="alert-link">Create a budget</a> to track your spending.
         </div>
         {% endif %}
       </div>
     </div>
   </div>
-</div>
 
-<div class="row">
-  <div class="col-md-6 mb-4">
+  <!-- Spending by Category Widget -->
+  <div class="dashboard-widget" data-widget="spending-category">
+    <div class="widget-drag-handle">
+      <i class="bi bi-grip-horizontal"></i>
+    </div>
     <div class="card">
       <div class="card-header d-flex justify-content-between align-items-center">
         <h3 class="mb-0">
@@ -154,9 +178,6 @@
         <div class="d-flex gap-2">
           <a href="{{ url_for('manage_categories') }}" class="btn btn-primary btn-sm">
             <i class="bi bi-tags me-1"></i>Manage Categories
-          </a>
-          <a href="{{ url_for('recurring_transactions') }}" class="btn btn-outline-primary btn-sm">
-            <i class="bi bi-arrow-repeat me-1"></i>Recurring Transactions
           </a>
           <a href="{{ url_for('reports_dashboard') }}" class="btn btn-outline-info btn-sm">
             <i class="bi bi-file-earmark-bar-graph me-1"></i>Reports
@@ -206,15 +227,23 @@
       </div>
     </div>
   </div>
-  <div class="col-md-6 mb-4">
+  
+  <!-- Recent Transactions Widget -->
+  <div class="dashboard-widget" data-widget="recent-transactions">
+    <div class="widget-drag-handle">
+      <i class="bi bi-grip-horizontal"></i>
+    </div>
     <div class="card">
       <div class="card-header d-flex justify-content-between align-items-center">
         <h3 class="mb-0">
           <i class="bi bi-list-ul me-2"></i>Recent Transactions
         </h3>
-        <div>
+        <div class="d-flex gap-2">
           <a href="{{ url_for('add_expense') }}" class="btn btn-primary btn-sm">
             <i class="bi bi-plus-circle me-1"></i>Add Transaction
+          </a>
+          <a href="{{ url_for('recurring_transactions') }}" class="btn btn-outline-primary btn-sm">
+            <i class="bi bi-arrow-repeat me-1"></i>Recurring
           </a>
         </div>
       </div>
@@ -265,6 +294,32 @@
               {% endfor %}
             </tbody>
           </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Dashboard Controls -->
+<div class="row mb-4">
+  <div class="col-12">
+    <div class="card">
+      <div class="card-body">
+        <div class="d-flex justify-content-between align-items-center">
+          <div>
+            <button type="button" class="btn btn-sm btn-outline-primary me-2" id="customize-dashboard-btn" data-bs-toggle="modal" data-bs-target="#dashboardCustomizeModal">
+              <i class="bi bi-grid me-1"></i>Customize Dashboard
+            </button>
+            <button type="button" class="btn btn-sm btn-outline-info me-2" id="start-tour-btn">
+              <i class="bi bi-info-circle me-1"></i>Start Tour
+            </button>
+          </div>
+          <div>
+            <button type="button" class="btn btn-sm btn-outline-secondary" onclick="showKeyboardShortcutsModal()">
+              <i class="bi bi-keyboard me-1"></i>Keyboard Shortcuts
+            </button>
+            <span class="text-muted ms-2">Press <kbd>Shift</kbd> + <kbd>?</kbd> to show shortcuts anytime</span>
+          </div>
         </div>
       </div>
     </div>
